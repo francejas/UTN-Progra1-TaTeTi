@@ -120,6 +120,7 @@ int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna)
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
 {
     int turno = 0, fila, columna;
+    //jugador actual
     char actual;
 
     while (1)
@@ -138,6 +139,7 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
             scanf("%d", &fila);
             printf("Ingrese columna (0-2): ");
             scanf("%d", &columna);
+            //validacion de casillero libre y que no este fuera de los limites
             if (movimientoInvalido(tablero, fila, columna))
                 printf("Movimiento invalido. Intente de nuevo.\n");
         }
@@ -145,6 +147,7 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
 
         tablero[fila][columna] = actual;
 
+        //valida ganador
         if (hayGanador(tablero, actual))
         {
             mostrarTablero(tablero);
@@ -152,6 +155,7 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
             break;
         }
 
+        //valida empate
         if (tableroLleno(tablero))
         {
             mostrarTablero(tablero);
