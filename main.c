@@ -78,6 +78,7 @@ void seleccionPiezas(char *p1, char *p2)
     while (*p1 != 'X' && *p1 != 'O');
 
     //Si *p1 es 'X', entonces *p2 será 'O'. Si no, entonces *p2 será 'X'.
+    //condición ? valor_si_verdadero : valor_si_falso;
 
     *p2 = (*p1 == 'X') ? 'O' : 'X';
 
