@@ -12,7 +12,7 @@ int mostrarMenu();
 void seleccionPiezas(char *p1, char *p2);
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2);
 void mostrarTablero(char tablero[FILAS][COLUMNAS]);
-int esMovimientoValido(char tablero[FILAS][COLUMNAS], int fila, int columna);
+int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna);
 
 
 int main()
@@ -112,12 +112,6 @@ void mostrarTablero(char tablero[FILAS][COLUMNAS])
     printf("\n");
 }
 
-int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna)
-{
-    //aca deveria de retornar 1 si es invalido
-}
-
-
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
 {
     int turno = 0, fila, columna;
@@ -166,6 +160,11 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
 
         turno++;
     }
+}
+
+int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna)
+{
+    //aca deveria de retornar 1 si es invalido
 }
 
 int hayGanador(){
