@@ -13,6 +13,7 @@ void seleccionPiezas(char *p1, char *p2);
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2);
 void mostrarTablero(char tablero[FILAS][COLUMNAS]);
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna);
+int hayGanador(char tablero[FILAS][COLUMNAS], char jugador);
 
 
 int main()
@@ -150,8 +151,8 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
             break;
         }
 
-        //valida empate
-        if (tableroLleno(tablero))
+        //evaluacion de empate
+        if (empate(tablero))
         {
             mostrarTablero(tablero);
             printf("¡Empate!\n");
@@ -167,8 +168,30 @@ int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna)
     //aca deveria de retornar 1 si es invalido
 }
 
-int hayGanador(){
+int hayGanador(char tablero[FILAS][COLUMNAS], char jugador)
+{
+    int flag=0;
+    // Filas y columnas
+    for (int i = 0; i < FILAS; i++)
+    {
+        if (tablero[i][0] == jugador && tablero[i][1] == jugador && tablero[i][2] == jugador)
+            flag=1;
+
+        if (tablero[0][i] == jugador && tablero[1][i] == jugador && tablero[2][i] == jugador)
+            flag=1;
+    }
+
+    // Diagonales
+    if (tablero[0][0] == jugador && tablero[1][1] == jugador && tablero[2][2] == jugador)
+        flag=1;
+
+    if (tablero[0][2] == jugador && tablero[1][1] == jugador && tablero[2][0] == jugador)
+        flag=1;
+
+    return flag;
 }
 
-int tableroLleno(){
+
+int empate()
+{
 }
