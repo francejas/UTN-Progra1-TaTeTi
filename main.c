@@ -130,7 +130,23 @@ void seleccionPiezas(char *p1, char *p2)
     }
     while (*p1 != 'X' && *p1 != 'O');
 
+    //Si *p1 es 'X', entonces *p2 será 'O'. Si no, entonces *p2 será 'X'.
+    //condición ? valor_si_verdadero : valor_si_falso
+
     *p2 = (*p1 == 'X') ? 'O' : 'X';
+
+     /*
+    Es lo mismo que escribir:
+    if (*p1 == 'X')
+    {
+        *p2 = 'O';
+    }
+    else
+    {
+        *p2 = 'X';
+    }
+    */
+
     printf("Jugador 1: %c | Jugador 2: %c\n", *p1, *p2);
 }
 
@@ -158,6 +174,9 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
     while (1)
     {
         mostrarTablero(tablero);
+         // turno % 2 siempre devuelve 0 o 1, si devuelve 0 le toca a p1, sino a p2.
+        // turno % 2 es igual a 0 ? si si p1 sino p2
+        // operador ternario o expresión condicional.
         actual = (turno % 2 == 0) ? p1 : p2;
         printf("Turno del Jugador %d (%c)\n", (turno % 2) + 1, actual);
 
