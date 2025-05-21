@@ -31,13 +31,9 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="ListaDeTareas.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="stats" />
 		<Unit filename="stats.c">
 			<Option compilerVar="CC" />
 		</Unit>

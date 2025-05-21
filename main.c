@@ -152,19 +152,21 @@ void seleccionPiezas(char *p1, char *p2)
 
 void mostrarTablero(char tablero[FILAS][COLUMNAS])
 {
-    printf("\n");
+    printf("\n   0   1   2\n");
     for (int i = 0; i < FILAS; i++)
     {
+        printf("%d ", i);  // Número de fila al principio
         for (int j = 0; j < COLUMNAS; j++)
         {
             printf(" %c ", tablero[i][j]);
             if (j < COLUMNAS - 1) printf("|");
         }
         printf("\n");
-        if (i < FILAS - 1) printf("---+---+---\n");
+        if (i < FILAS - 1) printf("  ---+---+---\n");
     }
     printf("\n");
 }
+
 
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
 {
