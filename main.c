@@ -10,15 +10,15 @@ void inicializarTablero(char tablero[FILAS][COLUMNAS]);
 int mostrarMenu();
 void seleccionPiezas(char *p1, char *p2);
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2);
+void jugarModoFacil(char tablero[FILAS][COLUMNAS], char jugador);
 void mostrarTablero(char tablero[FILAS][COLUMNAS]);
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna);
 int hayGanador(char tablero[FILAS][COLUMNAS], char jugador);
 int empate(char tablero[FILAS][COLUMNAS]);
 int modoDificultad();
-void modoFacil();
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
 void modoMedio();
 void modoDificil();
-int deseaSeguirJugando();
 
 int main()
 {
@@ -38,10 +38,12 @@ int main()
         }
         else
         {
+            p1 = 'X';
+            p2 = 'O';
             int dificultad = modoDificultad();
             if (dificultad == 1)
             {
-                modoFacil();
+                modoFacil(tablero, p1, p2);
             }
             else if (dificultad == 2)
             {
@@ -53,11 +55,11 @@ int main()
             }
         }
 
-        if (!deseaSeguirJugando())
-        {
-            printf("Gracias por jugar.\n");
+        char respuesta;
+        printf("\u00bfDesea jugar otra partida? (s/n): ");
+        scanf(" %c", &respuesta);
+        if (respuesta != 's' && respuesta != 'S')
             break;
-        }
     }
 
     return 0;
@@ -184,6 +186,61 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
     }
 }
 
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina)
+{
+    int turno = 0;
+    char actual;
+    int fila, columna;
+
+    while (1)
+    {
+        mostrarTablero(tablero);
+        actual = (turno % 2 == 0) ? jugador : maquina;
+
+        if (turno % 2 == 0)
+        {
+            printf("Turno del Jugador (%c)\n", actual);
+            do
+            {
+                printf("Ingrese fila (0-2): ");
+                scanf("%d", &fila);
+                printf("Ingrese columna (0-2): ");
+                scanf("%d", &columna);
+                if (movimientoInvalido(tablero, fila, columna))
+                    printf("Movimiento invalido. Intente de nuevo.\n");
+            }
+            while (movimientoInvalido(tablero, fila, columna));
+        }
+        else
+        {
+            printf("Turno de la Maquina (%c)...\n", actual);
+            do
+            {
+                fila = rand() % 3;
+                columna = rand() % 3;
+            } while (movimientoInvalido(tablero, fila, columna));
+        }
+
+        tablero[fila][columna] = actual;
+
+        if (hayGanador(tablero, actual))
+        {
+            mostrarTablero(tablero);
+            printf("\u00a1%c gana!\n", actual);
+            break;
+        }
+
+        if (empate(tablero))
+        {
+            mostrarTablero(tablero);
+            printf("\u00a1Empate!\n");
+            break;
+        }
+
+        turno++;
+    }
+}
+
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna)
 {
     int flag = 1;
@@ -225,11 +282,6 @@ int empate(char tablero[FILAS][COLUMNAS])
     return flag;
 }
 
-void modoFacil()
-{
-    printf("Modo fácil seleccionado\n");
-}
-
 void modoMedio()
 {
     printf("Modo medio seleccionado\n");
@@ -238,19 +290,4 @@ void modoMedio()
 void modoDificil()
 {
     printf("Modo difícil seleccionado\n");
-}
-
-int deseaSeguirJugando()
-{
-    char respuesta;
-    do
-    {
-        printf("\n¿Desea jugar otra partida? (s/n): ");
-        scanf(" %c", &respuesta);
-        respuesta = tolower(respuesta);
-        if (respuesta != 's' && respuesta != 'n')
-            printf("Respuesta invalida. Ingrese 's' para sí o 'n' para no.\n");
-    } while (respuesta != 's' && respuesta != 'n');
-
-    return (respuesta == 's');
 }
