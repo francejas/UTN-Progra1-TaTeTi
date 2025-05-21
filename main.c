@@ -32,8 +32,24 @@ int main()
             seleccionPiezas(&p1, &p2);
             jugarPvP(tablero, p1, p2);
         }
+        else
+        {
+            int dificultad=modoDificultad();
+            if(dificultad==1)
+            {
+                modoFacil();
+            }
+            else if(dificultad==2)
+            {
+                modoMedio();
+            }
+            else
+            {
+                modoDificil();
 
-        //else if (modo == 2) => jugador vs máquina
+            }
+        }
+
     }
 
     return 0;
@@ -63,6 +79,28 @@ int mostrarMenu()
 
     system("cls");
     return opcion;
+}
+
+int modoDificultad()
+{
+    int dificultad;
+    do
+    {
+        printf("=== TA-TE-TI ===\n");
+        printf("Seleccione dificultad:\n");
+        printf("1 - Facil\n");
+        printf("2 - Medio\n");
+        printf("3 - Dificil\n");
+
+        scanf("%d", &dificultad);
+        if (dificultad != 1 && dificultad != 2 && dificultad != 3)
+            printf("Opcion invalida. Intente de nuevo.\n");
+    }
+    while (dificultad != 1 && dificultad != 2 && dificultad != 3);
+
+    system("cls");
+    return dificultad;
+
 }
 
 void seleccionPiezas(char *p1, char *p2)
@@ -195,3 +233,17 @@ int hayGanador(char tablero[FILAS][COLUMNAS], char jugador)
 int empate()
 {
 }
+
+void modoFacil()
+{
+    printf("Modo fácil seleccionado\n");
+}
+void modoMedio()
+{
+    printf("Modo medio seleccionado\n");
+}
+void modoDificil()
+{
+    printf("Modo difícil seleccionado\n");
+}
+
