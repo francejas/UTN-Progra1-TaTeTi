@@ -1,9 +1,17 @@
 # depslib dependency file v1.0
-1747863642 source:c:\users\franc\desktop\escritorio\utn\progra1\tateti\main.c
+1747866046 source:c:\users\franc\desktop\escritorio\utn\progra1\tateti\main.c
 	<stdio.h>
 	<stdlib.h>
 	<time.h>
 	<ctype.h>
+	"stats.h"
 
 1747264798 source:c:\users\franc\desktop\escritorio\utn\progra1\tateti\listadetareas.c
+
+1747865808 source:c:\users\franc\desktop\escritorio\utn\progra1\tateti\stats.c
+	<stdio.h>
+	<stdlib.h>
+	"stats.h"
+
+1747866123 c:\users\franc\desktop\escritorio\utn\progra1\tateti\stats.h
 

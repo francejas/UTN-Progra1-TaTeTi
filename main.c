@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <ctype.h>
+#include "stats.h"
 
 #define FILAS 3
 #define COLUMNAS 3
@@ -25,6 +26,8 @@ int main()
     srand(time(NULL));
     char tablero[FILAS][COLUMNAS];
     char p1, p2;
+
+    stEstadisticas stats;
 
     while (1)
     {
@@ -56,11 +59,13 @@ int main()
         }
 
         char respuesta;
-        printf("\u00bfDesea jugar otra partida? (s/n): ");
+        printf("Desea jugar otra partida? (s/n): ");
         scanf(" %c", &respuesta);
         if (respuesta != 's' && respuesta != 'S')
             break;
     }
+
+    //mostrarEstadisticas
 
     return 0;
 }
@@ -99,8 +104,9 @@ int modoDificultad()
         printf("=== TA-TE-TI ===\n");
         printf("Seleccione dificultad:\n");
         printf("1 - Facil\n");
-        printf("2 - Medio\n");
-        printf("3 - Dificil\n");
+        printf("2 - Medio (Proximamente)\n");
+        printf("3 - Dificil (Proximamente\n");
+        printf("Eleccion: ");
 
         scanf("%d", &dificultad);
         if (dificultad != 1 && dificultad != 2 && dificultad != 3)
@@ -171,14 +177,14 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
         if (hayGanador(tablero, actual))
         {
             mostrarTablero(tablero);
-            printf("\u00a1Jugador %d (%c) gana!\n", (turno % 2) + 1, actual);
+            printf("Jugador %d (%c) gana!\n", (turno % 2) + 1, actual);
             break;
         }
 
         if (empate(tablero))
         {
             mostrarTablero(tablero);
-            printf("\u00a1Empate!\n");
+            printf("Empate!\n");
             break;
         }
 
@@ -226,14 +232,14 @@ void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina)
         if (hayGanador(tablero, actual))
         {
             mostrarTablero(tablero);
-            printf("\u00a1%c gana!\n", actual);
+            printf("%c gana!\n", actual);
             break;
         }
 
         if (empate(tablero))
         {
             mostrarTablero(tablero);
-            printf("\u00a1Empate!\n");
+            printf("Empate!\n");
             break;
         }
 
