@@ -130,8 +130,8 @@ void seleccionPiezas(char *p1, char *p2)
     }
     while (*p1 != 'X' && *p1 != 'O');
 
-    //Si *p1 es 'X', entonces *p2 ser· 'O'. Si no, entonces *p2 ser· 'X'.
-    //condiciÛn ? valor_si_verdadero : valor_si_falso
+    //Si *p1 es 'X', entonces *p2 ser√° 'O'. Si no, entonces *p2 ser√° 'X'.
+    //condici√≥n ? valor_si_verdadero : valor_si_falso
 
     *p2 = (*p1 == 'X') ? 'O' : 'X';
 
@@ -155,7 +155,7 @@ void mostrarTablero(char tablero[FILAS][COLUMNAS])
     printf("\n   0   1   2\n");
     for (int i = 0; i < FILAS; i++)
     {
-        printf("%d ", i);  // N˙mero de fila al principio
+        printf("%d ", i);  // N√∫mero de fila al principio
         for (int j = 0; j < COLUMNAS; j++)
         {
             printf(" %c ", tablero[i][j]);
@@ -178,7 +178,7 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2)
         mostrarTablero(tablero);
          // turno % 2 siempre devuelve 0 o 1, si devuelve 0 le toca a p1, sino a p2.
         // turno % 2 es igual a 0 ? si si p1 sino p2
-        // operador ternario o expresiÛn condicional.
+        // operador ternario o expresi√≥n condicional.
         actual = (turno % 2 == 0) ? p1 : p2;
         printf("Turno del Jugador %d (%c)\n", (turno % 2) + 1, actual);
 
@@ -270,6 +270,9 @@ void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina)
 
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna)
 {
+    //1 si invalid
+    //0 si es valido
+    
     int flag = 1;
     if (fila >= 0 && fila < FILAS && columna >= 0 && columna < COLUMNAS && tablero[fila][columna] == ' ')
     {
@@ -316,5 +319,5 @@ void modoMedio()
 
 void modoDificil()
 {
-    printf("Modo difÌcil seleccionado\n");
+    printf("Modo dif√≠cil seleccionado\n");
 }
