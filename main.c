@@ -321,3 +321,6 @@ void modoDificil()
 {
     printf("Modo difícil seleccionado\n");
 }
+
+
+//prueba
