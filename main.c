@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <ctype.h>
 
@@ -10,146 +11,624 @@
 #define AR_PARTIDAS "partidas.dat"
 #define AR_PARTIDAXJUGADOR "partidaXjugador.dat"
 
+typedef struct {
+    int idJugador;
+    char nombre[30];
+    char apellido[30];
+    char email[50];
+    char username[30];
+    char password[20];
+    char dni[10];
+    int ptsTotales;
+    int eliminado;
+} stJugador;
+
+typedef struct {
+    int idPartida;
+    int dificultad;
+    int esContraCpu;
+} stPartida;
+
+typedef struct {
+    int idPartidaJugador;
+    int idPartida;
+    int idJugador;
+    int resultado;
+    int puntosJugador;
+} stPartidaXJugador;
+
 void inicializarTablero(char tablero[FILAS][COLUMNAS]);
-int mostrarMenuPrincipal();
 int mostrarMenuJuego();
 void seleccionPiezas(char *p1, char *p2);
-void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2);
+void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugadorLogueado);
 void mostrarTablero(char tablero[FILAS][COLUMNAS]);
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna);
 int hayGanador(char tablero[FILAS][COLUMNAS], char jugador);
 int empate(char tablero[FILAS][COLUMNAS]);
 int modoDificultad();
-void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
-void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
-void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado);
+void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado);
+void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado);
 void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char actual);
 int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, char jugador, char maquina);
 int evaluarEstado(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
-int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, int esJugador);
-int preguntarOtraPartida();
+int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, int esJugador, stJugador jugadorLogueado, int esContraCpu, int dificultad);
+
+int mostrarMenuPrincipal(stJugador jugadorLogueado);
+stJugador iniciarSesion(char nombreArchivo[]);
+void registrarJugador(char nombreArchivo[]);
+stJugador cargarUnJugador(char nombreArchivo[]);
+void mostrarRanking(char nombreArchivo[]);
+int validarEmail(char email[], char nombreArchivo[], int idExcluir);
+int validarUsername(char username[], char nombreArchivo[], int idExcluir);
+int validarPassword(char password[]);
+int obtenerUltimoId(char nombreArchivo[]);
+void ordenarRanking(stJugador jugadores[], int validos);
+void menuVerPerfil(stJugador* jugadorLogueado);
+void modificarPerfil(stJugador* jugador, char nombreArchivo[]);
+int actualizarJugadorEnArchivo(stJugador jugador, char nombreArchivo[]);
+void eliminarPerfil(stJugador* jugador, char nombreArchivo[]);
+void mostrarEstadisticas(stJugador jugador, char archivoPartidasXJugador[]);
+
+void guardarPartida(stPartida partida, char nombreArchivo[]);
+void guardarPartidaXJugador(stPartidaXJugador pxj, char nombreArchivo[]);
+int obtenerUltimoIdPartida(char nombreArchivo[]);
+int obtenerUltimoIdPartidaXJugador(char nombreArchivo[]);
 
 int main() {
     srand(time(NULL));
     char tablero[FILAS][COLUMNAS];
     char p1, p2;
     int salir = 0;
+    stJugador jugadorLogueado;
+    jugadorLogueado.idJugador = -1;
 
     while (!salir) {
-        int opcion = mostrarMenuPrincipal();
+        int opcion = mostrarMenuPrincipal(jugadorLogueado);
         system("cls");
 
         switch(opcion) {
-            case 1: // Partida rápida
+            case 1:
             {
-                int jugarOtra = 1;
                 int modo = mostrarMenuJuego();
+                inicializarTablero(tablero);
 
-                while (jugarOtra) {
-                    inicializarTablero(tablero);
-
-                    if (modo == 1) {
-                        if (jugarOtra == 1) { // Solo preguntar fichas la primera vez
-                            seleccionPiezas(&p1, &p2);
-                        }
-                        jugarPvP(tablero, p1, p2);
+                if (modo == 1) {
+                    seleccionPiezas(&p1, &p2);
+                    jugarPvP(tablero, p1, p2, jugadorLogueado);
+                } else {
+                    p1 = 'X';
+                    p2 = 'O';
+                    int dificultad = modoDificultad();
+                    if (dificultad == 1) {
+                        modoFacil(tablero, p1, p2, jugadorLogueado);
+                    } else if (dificultad == 2) {
+                        modoMedio(tablero, p1, p2, jugadorLogueado);
                     } else {
-                        p1 = 'X';
-                        p2 = 'O';
-                        int dificultad = 0;
-                        if (jugarOtra == 1) { // Solo preguntar dificultad la primera vez
-                            dificultad = modoDificultad();
-                        }
-                        static int dificultadGuardada = 0; // Guardar la dificultad elegida
-                        if (jugarOtra == 1) {
-                            dificultadGuardada = dificultad;
-                        }
-
-                        if (dificultadGuardada == 1) {
-                            modoFacil(tablero, p1, p2);
-                        } else if (dificultadGuardada == 2) {
-                            modoMedio(tablero, p1, p2);
-                        } else {
-                            modoDificil(tablero, p1, p2);
-                        }
+                        modoDificil(tablero, p1, p2, jugadorLogueado);
                     }
-
-                    jugarOtra = preguntarOtraPartida();
                 }
                 break;
             }
             case 2:
-                printf("[Iniciar sesion] Funcionalidad por implementar.\n");
+                if(jugadorLogueado.idJugador == -1){
+                    jugadorLogueado = iniciarSesion(AR_JUGADORES);
+                    if(jugadorLogueado.idJugador != -1){
+                        printf("Inicio de sesion exitoso!\n");
+                    } else {
+                        printf("Email o contrasena incorrectos.\n");
+                    }
+                } else {
+                    menuVerPerfil(&jugadorLogueado);
+                }
                 break;
             case 3:
-                printf("[Registrarse] Funcionalidad por implementar.\n");
+                if(jugadorLogueado.idJugador == -1){
+                    registrarJugador(AR_JUGADORES);
+                } else {
+                    mostrarEstadisticas(jugadorLogueado, AR_PARTIDAXJUGADOR);
+                }
                 break;
             case 4:
-                salir = 1;
+                if(jugadorLogueado.idJugador != -1){
+                    mostrarRanking(AR_JUGADORES);
+                } else {
+                    salir = 1;
+                }
+                break;
+            case 5:
+                if(jugadorLogueado.idJugador != -1){
+                    jugadorLogueado.idJugador = -1;
+                    printf("Sesion cerrada.\n");
+                }
+                break;
+            case 6:
+                if(jugadorLogueado.idJugador != -1){
+                    salir = 1;
+                }
                 break;
             default:
-                // no debería ocurrir
                 break;
         }
         if (!salir) {
-            printf("Presione ENTER para volver al menu principal...");
+            printf("\nPresione ENTER para volver al menu principal...");
             getchar(); getchar();
             system("cls");
         }
     }
 
+    printf("Gracias por jugar!\n");
     return 0;
 }
 
-int mostrarMenuPrincipal() {
+int mostrarMenuPrincipal(stJugador jugadorLogueado) {
     int opcion = 0;
     int flag = 1;
     int resultado = 0;
+    int maxOpcion = 4;
 
     while (flag) {
         printf("=== TA-TE-TI ===\n");
+        if(jugadorLogueado.idJugador != -1){
+            printf("Bienvenido, %s!\n", jugadorLogueado.username);
+            printf("-------------------\n");
+            maxOpcion = 6;
+        }
+
         printf("1 - Partida rapida\n");
-        printf("2 - Iniciar sesion\n");
-        printf("3 - Registrarse\n");
-        printf("4 - Salir\n");
+
+        if(jugadorLogueado.idJugador == -1){
+            printf("2 - Iniciar sesion\n");
+            printf("3 - Registrarse\n");
+            printf("4 - Salir\n");
+        } else {
+            printf("2 - Ver/Modificar mi perfil\n");
+            printf("3 - Ver mis estadisticas\n");
+            printf("4 - Ranking de jugadores\n");
+            printf("5 - Cerrar sesion\n");
+            printf("6 - Salir del juego\n");
+        }
+
         printf("Seleccione una opcion: ");
         scanf("%d", &opcion);
-        if (opcion >= 1 && opcion <= 4) {
+
+        if (opcion >= 1 && opcion <= maxOpcion) {
             flag = 0;
             resultado = opcion;
         } else {
             printf("Opcion invalida. Intente de nuevo.\n");
+            while(getchar() != '\n');
+            system("pause");
+            system("cls");
         }
+    }
+    return resultado;
+}
+
+void menuVerPerfil(stJugador* jugadorLogueado) {
+    int opcion = 0;
+    int salir = 0;
+
+    while(!salir) {
+        system("cls");
+        printf("--- GESTION DE PERFIL ---\n");
+        printf("Usuario: %s\n", jugadorLogueado->username);
+        printf("-------------------------\n");
+        printf("1. Modificar mis datos\n");
+        printf("2. Eliminar mi cuenta\n");
+        printf("0. Volver al menu principal\n");
+        printf("Seleccione una opcion: ");
+        scanf("%d", &opcion);
+
+        switch(opcion) {
+            case 1:
+                modificarPerfil(jugadorLogueado, AR_JUGADORES);
+                break;
+            case 2:
+                eliminarPerfil(jugadorLogueado, AR_JUGADORES);
+                if(jugadorLogueado->idJugador == -1) {
+                    salir = 1;
+                }
+                break;
+            case 0:
+                salir = 1;
+                break;
+            default:
+                printf("Opcion invalida.\n");
+                break;
+        }
+        if(!salir) {
+            system("pause");
+        }
+    }
+}
+
+void modificarPerfil(stJugador* jugador, char nombreArchivo[]) {
+    int opcion = 0;
+    char nuevaPass[20];
+    int actualizado = 0;
+    stJugador copiaJugador = *jugador;
+
+    system("cls");
+    printf("--- MODIFICAR DATOS ---\n");
+    printf("¿Que dato desea modificar?\n");
+    printf("1. Nombre\n");
+    printf("2. Apellido\n");
+    printf("3. Email\n");
+    printf("4. Username\n");
+    printf("5. Contrasena\n");
+    printf("6. DNI\n");
+    printf("0. Cancelar\n");
+    printf("Opcion: ");
+    scanf("%d", &opcion);
+
+    switch(opcion) {
+        case 1:
+            printf("Nuevo Nombre: ");
+            scanf("%s", copiaJugador.nombre);
+            break;
+        case 2:
+            printf("Nuevo Apellido: ");
+            scanf("%s", copiaJugador.apellido);
+            break;
+        case 3:
+            printf("Nuevo Email: ");
+            scanf("%s", copiaJugador.email);
+            if(!validarEmail(copiaJugador.email, nombreArchivo, copiaJugador.idJugador)){
+                printf("Error: Email invalido o ya en uso por otro jugador.\n");
+                return;
+            }
+            break;
+        case 4:
+            printf("Nuevo Username: ");
+            scanf("%s", copiaJugador.username);
+            if(!validarUsername(copiaJugador.username, nombreArchivo, copiaJugador.idJugador)){
+                printf("Error: Username ya en uso por otro jugador.\n");
+                return;
+            }
+            break;
+        case 5:
+            printf("Nueva Contrasena: ");
+            scanf("%s", nuevaPass);
+            if(!validarPassword(nuevaPass)){
+                printf("Error: La contrasena no cumple los requisitos (mayuscula y minuscula).\n");
+                return;
+            }
+            strcpy(copiaJugador.password, nuevaPass);
+            break;
+        case 6:
+            printf("Nuevo DNI: ");
+            scanf("%s", copiaJugador.dni);
+            break;
+        case 0:
+            return;
+        default:
+            printf("Opcion invalida.\n");
+            return;
+    }
+
+    actualizado = actualizarJugadorEnArchivo(copiaJugador, nombreArchivo);
+
+    if(actualizado) {
+        *jugador = copiaJugador;
+        printf("Dato actualizado correctamente.\n");
+    } else {
+        printf("Error: No se pudo actualizar el dato en el archivo.\n");
+    }
+}
+
+int actualizarJugadorEnArchivo(stJugador jugador, char nombreArchivo[]) {
+    int actualizado = 0;
+    FILE* fp = fopen(nombreArchivo, "r+b");
+
+    if (fp == NULL) {
+        printf("Error al abrir el archivo de jugadores.\n");
+    } else {
+        stJugador temp;
+        while(fread(&temp, sizeof(stJugador), 1, fp) > 0 && !actualizado) {
+            if(temp.idJugador == jugador.idJugador) {
+                fseek(fp, -sizeof(stJugador), SEEK_CUR);
+                fwrite(&jugador, sizeof(stJugador), 1, fp);
+                actualizado = 1;
+            }
+        }
+        fclose(fp);
+    }
+    return actualizado;
+}
+
+void eliminarPerfil(stJugador* jugador, char nombreArchivo[]) {
+    char passwordConfirm[20];
+    int eliminado = 0;
+
+    printf("--- ELIMINAR CUENTA ---\n");
+    printf("ATENCION: Esta accion es irreversible.\n");
+    printf("Para confirmar, ingrese su contrasena: ");
+    scanf("%s", passwordConfirm);
+
+    if(strcmp(jugador->password, passwordConfirm) == 0) {
+        jugador->eliminado = 1;
+        eliminado = actualizarJugadorEnArchivo(*jugador, nombreArchivo);
+        if(eliminado) {
+            printf("Su cuenta ha sido eliminada exitosamente. Se cerrara la sesion.\n");
+            jugador->idJugador = -1;
+        } else {
+            printf("Error: No se pudo procesar la eliminacion.\n");
+            jugador->eliminado = 0;
+        }
+    } else {
+        printf("Contrasena incorrecta. La eliminacion ha sido cancelada.\n");
+    }
+}
+
+void mostrarEstadisticas(stJugador jugador, char archivoPartidasXJugador[]) {
+    int jugadas = 0, ganadas = 0, empatadas = 0, derrotas = 0;
+    float porcGanadas = 0, porcEmpatadas = 0, porcDerrotas = 0;
+    stPartidaXJugador pxj;
+
+    FILE* fp = fopen(archivoPartidasXJugador, "rb");
+
+    if (fp == NULL) {
+        printf("Aun no has jugado ninguna partida.\n");
+    } else {
+        while(fread(&pxj, sizeof(stPartidaXJugador), 1, fp) > 0) {
+            if (pxj.idJugador == jugador.idJugador) {
+                jugadas++;
+                if (pxj.resultado == 1) {
+                    ganadas++;
+                } else if (pxj.resultado == 2) {
+                    empatadas++;
+                } else {
+                    derrotas++;
+                }
+            }
+        }
+        fclose(fp);
+    }
+
+    if(jugadas > 0) {
+        porcGanadas = ((float)ganadas / jugadas) * 100;
+        porcEmpatadas = ((float)empatadas / jugadas) * 100;
+        porcDerrotas = ((float)derrotas / jugadas) * 100;
+    }
+
+    printf("--- MIS ESTADISTICAS ---\n");
+    printf("Username: %s\n", jugador.username);
+    printf("---------------------------------------------------\n");
+    printf("Partidas jugadas: %d\n", jugadas);
+    printf("---------------------------------------------------\n");
+    printf("Partidas ganadas: %d (%.2f%%)\n", ganadas, porcGanadas);
+    printf("Partidas empatadas: %d (%.2f%%)\n", empatadas, porcEmpatadas);
+    printf("Partidas perdidas: %d (%.2f%%)\n", derrotas, porcDerrotas);
+    printf("---------------------------------------------------\n");
+}
+
+stJugador iniciarSesion(char nombreArchivo[]) {
+    char email[50];
+    char password[20];
+    stJugador jugador;
+    stJugador jugadorEncontrado;
+    jugadorEncontrado.idJugador = -1;
+    int encontrado = 0;
+
+    FILE* fp = fopen(nombreArchivo, "rb");
+
+    if (fp == NULL) {
+        printf("Error al abrir el archivo de jugadores. Puede que no haya jugadores registrados.\n");
+    } else {
+        printf("--- INICIO DE SESION ---\n");
+        printf("Email: ");
+        scanf("%s", email);
+        printf("Contrasena: ");
+        scanf("%s", password);
+
+        while (fread(&jugador, sizeof(stJugador), 1, fp) > 0 && !encontrado) {
+            if (strcmp(jugador.email, email) == 0 && strcmp(jugador.password, password) == 0 && jugador.eliminado == 0) {
+                encontrado = 1;
+                jugadorEncontrado = jugador;
+            }
+        }
+        fclose(fp);
+    }
+    return jugadorEncontrado;
+}
+
+void registrarJugador(char nombreArchivo[]) {
+    stJugador nuevoJugador = cargarUnJugador(nombreArchivo);
+
+    if (nuevoJugador.idJugador != -1) {
+        FILE* fp = fopen(nombreArchivo, "ab");
+        if (fp == NULL) {
+            printf("Error critico: No se pudo abrir el archivo para registrar al jugador.\n");
+        } else {
+            fwrite(&nuevoJugador, sizeof(stJugador), 1, fp);
+            fclose(fp);
+            printf("\n¡Registro exitoso! Ahora puede iniciar sesion.\n");
+        }
+    } else {
+        printf("\nEl proceso de registro fue cancelado.\n");
+    }
+}
+
+stJugador cargarUnJugador(char nombreArchivo[]) {
+    stJugador jugador;
+    int esValido = 0;
+
+    printf("--- REGISTRO DE NUEVO JUGADOR ---\n");
+    jugador.idJugador = -1;
+
+    do {
+        printf("Ingrese Email (debe contener @ y .com): ");
+        scanf("%s", jugador.email);
+        esValido = validarEmail(jugador.email, nombreArchivo, -1);
+        if(!esValido){
+            printf("Error: El formato del email es invalido o ya esta en uso.\n");
+        }
+    } while (!esValido);
+
+    do {
+        printf("Ingrese Contrasena (al menos 1 mayuscula y 1 minuscula): ");
+        scanf("%s", jugador.password);
+        esValido = validarPassword(jugador.password);
+        if(!esValido){
+            printf("Error: La contrasena no cumple con los requisitos.\n");
+        }
+    } while (!esValido);
+
+    do {
+        printf("Ingrese Username (debe ser unico): ");
+        scanf("%s", jugador.username);
+        esValido = validarUsername(jugador.username, nombreArchivo, -1);
+        if(!esValido){
+            printf("Error: El username ya esta en uso.\n");
+        }
+    } while (!esValido);
+
+    printf("Ingrese Nombre: ");
+    scanf("%s", jugador.nombre);
+    printf("Ingrese Apellido: ");
+    scanf("%s", jugador.apellido);
+    printf("Ingrese DNI: ");
+    scanf("%s", jugador.dni);
+
+    jugador.idJugador = obtenerUltimoId(nombreArchivo) + 1;
+    jugador.ptsTotales = 0;
+    jugador.eliminado = 0;
+
+    return jugador;
+}
+
+int validarEmail(char email[], char nombreArchivo[], int idExcluir) {
+    int resultado = 0;
+    stJugador jugador;
+    int existe = 0;
+    FILE* fp;
+
+    if (strchr(email, '@') != NULL && strstr(email, ".com") != NULL) {
+        fp = fopen(nombreArchivo, "rb");
+        if (fp != NULL) {
+            while(fread(&jugador, sizeof(stJugador), 1, fp) > 0 && !existe){
+                if(strcmp(jugador.email, email) == 0 && jugador.idJugador != idExcluir){
+                    existe = 1;
+                }
+            }
+            fclose(fp);
+        }
+        if(!existe){
+            resultado = 1;
+        }
+    }
+    return resultado;
+}
+
+int validarUsername(char username[], char nombreArchivo[], int idExcluir) {
+    stJugador jugador;
+    int existe = 0;
+    int resultado = 0;
+    FILE* fp = fopen(nombreArchivo, "rb");
+
+    if (fp != NULL) {
+        while(fread(&jugador, sizeof(stJugador), 1, fp) > 0 && !existe){
+            if(strcmp(jugador.username, username) == 0 && jugador.idJugador != idExcluir){
+                existe = 1;
+            }
+        }
+        fclose(fp);
+    }
+
+    if (!existe) {
+        resultado = 1;
     }
 
     return resultado;
 }
 
-int preguntarOtraPartida() {
-    char respuesta;
-    int flag = 1;
+int validarPassword(char password[]) {
+    int tieneMayus = 0;
+    int tieneMinus = 0;
+    int i = 0;
     int resultado = 0;
 
-    while (flag) {
-        printf("\n¿Desea jugar otra partida? (s/n): ");
-        scanf(" %c", &respuesta);
-        respuesta = tolower(respuesta);
-        if (respuesta == 's') {
-            resultado = 1;
-            flag = 0;
-        } else if (respuesta == 'n') {
-            resultado = 0;
-            flag = 0;
-        } else {
-            printf("Opcion invalida. Ingrese 's' para si o 'n' para no.\n");
+    while (password[i] != '\0') {
+        if (isupper(password[i])) {
+            tieneMayus = 1;
+        } else if (islower(password[i])) {
+            tieneMinus = 1;
         }
+        i++;
     }
 
-    if (resultado == 1) {
-        system("cls");
+    if (tieneMayus && tieneMinus) {
+        resultado = 1;
     }
 
     return resultado;
+}
+
+int obtenerUltimoId(char nombreArchivo[]) {
+    stJugador jugador;
+    int ultimoId = 0;
+    FILE* fp = fopen(nombreArchivo, "rb");
+
+    if (fp != NULL) {
+        fseek(fp, 0, SEEK_END);
+        if (ftell(fp) > 0) {
+            fseek(fp, -sizeof(stJugador), SEEK_END);
+            if (fread(&jugador, sizeof(stJugador), 1, fp) > 0) {
+                ultimoId = jugador.idJugador;
+            }
+        }
+        fclose(fp);
+    }
+    return ultimoId;
+}
+
+void mostrarRanking(char nombreArchivo[]) {
+    stJugador jugadores[100];
+    stJugador jugador;
+    int validos = 0;
+    FILE* fp = fopen(nombreArchivo, "rb");
+
+    if (fp == NULL) {
+        printf("Aun no hay jugadores registrados para mostrar un ranking.\n");
+    } else {
+        while(fread(&jugador, sizeof(stJugador), 1, fp) > 0){
+            if(jugador.eliminado == 0){
+                jugadores[validos] = jugador;
+                validos++;
+            }
+        }
+        fclose(fp);
+
+        if (validos > 0) {
+            ordenarRanking(jugadores, validos);
+
+            printf("--- RANKING DE JUGADORES ---\n");
+            printf("------------------------------\n");
+            printf("| Puesto | Username   | Puntos |\n");
+            printf("------------------------------\n");
+            for(int i = 0; i < validos; i++){
+                printf("| %-6d | %-10s | %-6d |\n", i + 1, jugadores[i].username, jugadores[i].ptsTotales);
+            }
+            printf("------------------------------\n");
+        } else {
+            printf("No hay jugadores activos para mostrar en el ranking.\n");
+        }
+    }
+}
+
+void ordenarRanking(stJugador jugadores[], int validos) {
+    int i, j;
+    stJugador aux;
+    for (i = 0; i < validos - 1; i++) {
+        for (j = 0; j < validos - i - 1; j++) {
+            if (jugadores[j].ptsTotales < jugadores[j + 1].ptsTotales) {
+                aux = jugadores[j];
+                jugadores[j] = jugadores[j+1];
+                jugadores[j+1] = aux;
+            }
+        }
+    }
 }
 
 int mostrarMenuJuego() {
@@ -195,7 +674,6 @@ int modoDificultad() {
         printf("2 - Medio\n");
         printf("3 - Dificil\n");
         printf("Eleccion: ");
-
         scanf("%d", &dificultad);
         if (dificultad >= 1 && dificultad <= 3) {
             flag = 0;
@@ -283,7 +761,6 @@ int hayGanador(char tablero[FILAS][COLUMNAS], char jugador) {
     int ganador = 0;
     int i;
 
-    // Verificar filas y columnas
     for (i = 0; i < FILAS && !ganador; i++) {
         if (tablero[i][0] == jugador && tablero[i][1] == jugador && tablero[i][2] == jugador) {
             ganador = 1;
@@ -293,7 +770,6 @@ int hayGanador(char tablero[FILAS][COLUMNAS], char jugador) {
         }
     }
 
-    // Verificar diagonales
     if (!ganador) {
         if (tablero[0][0] == jugador && tablero[1][1] == jugador && tablero[2][2] == jugador) {
             ganador = 1;
@@ -320,7 +796,7 @@ int empate(char tablero[FILAS][COLUMNAS]) {
     return lleno;
 }
 
-void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2) {
+void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -332,11 +808,11 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2) {
         actual = (turno % 2 == 0) ? p1 : p2;
         turnoJugador(tablero, &fila, &columna, actual);
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, (turno % 2) + 1);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, (turno % 2) + 1, jugadorLogueado, 0, 0);
     }
 }
 
-void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -357,11 +833,11 @@ void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
         }
 
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0, jugadorLogueado, 1, 1);
     }
 }
 
-void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
+void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -378,7 +854,6 @@ void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
             int bloqueado = 0;
             int i, j;
 
-            // Buscar movimiento para bloquear al jugador
             for (i = 0; i < FILAS && !bloqueado; i++) {
                 for (j = 0; j < COLUMNAS && !bloqueado; j++) {
                     if (tablero[i][j] == ' ') {
@@ -395,7 +870,6 @@ void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
                 }
             }
 
-            // Si no hay movimiento para bloquear, mover aleatoriamente
             if (!bloqueado) {
                 do {
                     fila = rand() % 3;
@@ -405,7 +879,7 @@ void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
         }
 
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0, jugadorLogueado, 1, 2);
     }
 }
 
@@ -467,7 +941,7 @@ int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, c
     return resultado;
 }
 
-void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
+void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -502,11 +976,11 @@ void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
         }
 
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0, jugadorLogueado, 1, 3);
     }
 }
 
-int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, int esJugador) {
+int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, int esJugador, stJugador jugadorLogueado, int esContraCpu, int dificultad) {
     int victoria = hayGanador(tablero, actual);
     int empateJuego = empate(tablero);
     int resultado = 0;
@@ -524,10 +998,83 @@ int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoT
         }
         *juegoTerminado = 1;
         resultado = 1;
+
+        if (jugadorLogueado.idJugador != -1) {
+            stPartida partida;
+            partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
+            partida.dificultad = dificultad;
+            partida.esContraCpu = esContraCpu;
+            guardarPartida(partida, AR_PARTIDAS);
+
+            stPartidaXJugador pxj;
+            pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+            pxj.idPartida = partida.idPartida;
+            pxj.idJugador = jugadorLogueado.idJugador;
+            if (victoria && actual == 'X') {
+                pxj.resultado = 1;
+                pxj.puntosJugador = 3;
+            } else if (empateJuego) {
+                pxj.resultado = 2;
+                pxj.puntosJugador = 1;
+            } else {
+                pxj.resultado = 0;
+                pxj.puntosJugador = 0;
+            }
+            guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
+
+            jugadorLogueado.ptsTotales += pxj.puntosJugador;
+            actualizarJugadorEnArchivo(jugadorLogueado, AR_JUGADORES);
+        }
     } else {
         (*turno)++;
         resultado = 0;
     }
 
     return resultado;
+}
+
+void guardarPartida(stPartida partida, char nombreArchivo[]) {
+    FILE* fp = fopen(nombreArchivo, "ab");
+    if (fp != NULL) {
+        fwrite(&partida, sizeof(stPartida), 1, fp);
+        fclose(fp);
+    }
+}
+
+void guardarPartidaXJugador(stPartidaXJugador pxj, char nombreArchivo[]) {
+    FILE* fp = fopen(nombreArchivo, "ab");
+    if (fp != NULL) {
+        fwrite(&pxj, sizeof(stPartidaXJugador), 1, fp);
+        fclose(fp);
+    }
+}
+
+int obtenerUltimoIdPartida(char nombreArchivo[]) {
+    stPartida partida;
+    int ultimoId = 0;
+    FILE* fp = fopen(nombreArchivo, "rb");
+
+    if (fp != NULL) {
+        fseek(fp, -sizeof(stPartida), SEEK_END);
+        if (fread(&partida, sizeof(stPartida), 1, fp) > 0) {
+            ultimoId = partida.idPartida;
+        }
+        fclose(fp);
+    }
+    return ultimoId;
+}
+
+int obtenerUltimoIdPartidaXJugador(char nombreArchivo[]) {
+    stPartidaXJugador pxj;
+    int ultimoId = 0;
+    FILE* fp = fopen(nombreArchivo, "rb");
+
+    if (fp != NULL) {
+        fseek(fp, -sizeof(stPartidaXJugador), SEEK_END);
+        if (fread(&pxj, sizeof(stPartidaXJugador), 1, fp) > 0) {
+            ultimoId = pxj.idPartidaJugador;
+        }
+        fclose(fp);
+    }
+    return ultimoId;
 }
