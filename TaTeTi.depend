@@ -1,7 +1,8 @@
 # depslib dependency file v1.0
-1750780938 source:c:\users\franc\desktop\escritorio\utn\progra1\tateti\main.c
+1750821921 source:c:\users\franc\desktop\escritorio\utn\progra1\tateti\main.c
 	<stdio.h>
 	<stdlib.h>
+	<string.h>
 	<time.h>
 	<ctype.h>
 

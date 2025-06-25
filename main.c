@@ -40,7 +40,7 @@ typedef struct {
 void inicializarTablero(char tablero[FILAS][COLUMNAS]);
 int mostrarMenuJuego();
 void seleccionPiezas(char *p1, char *p2);
-void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugadorLogueado);
+void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugador1, stJugador jugador2);
 void mostrarTablero(char tablero[FILAS][COLUMNAS]);
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna);
 int hayGanador(char tablero[FILAS][COLUMNAS], char jugador);
@@ -52,7 +52,7 @@ void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJu
 void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char actual);
 int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, char jugador, char maquina);
 int evaluarEstado(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
-int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, int esJugador, stJugador jugadorLogueado, int esContraCpu, int dificultad);
+int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador jugador1, stJugador jugador2, int esContraCpu, int dificultad, char p1, char p2);
 
 int mostrarMenuPrincipal(stJugador jugadorLogueado);
 stJugador iniciarSesion(char nombreArchivo[]);
@@ -95,11 +95,33 @@ int main() {
 
                 if (modo == 1) {
                     seleccionPiezas(&p1, &p2);
-                    jugarPvP(tablero, p1, p2, jugadorLogueado);
+                    stJugador jugador2;
+                    jugador2.idJugador = -1;
+                    if (jugadorLogueado.idJugador != -1) {
+                        char respuesta;
+                        printf("¿El jugador 2 desea iniciar sesión? (s/n): ");
+                        scanf(" %c", &respuesta);
+                        if (respuesta == 's' || respuesta == 'S') {
+                            jugador2 = iniciarSesion(AR_JUGADORES);
+                            if (jugador2.idJugador == -1) {
+                                printf("No se encontró el email o la contraseña es incorrecta.\n");
+                                printf("¿Desea registrarse? (s/n): ");
+                                scanf(" %c", &respuesta);
+                                if (respuesta == 's' || respuesta == 'S') {
+                                    registrarJugador(AR_JUGADORES);
+                                    printf("Registro exitoso. Ahora inicie sesión.\n");
+                                    jugador2 = iniciarSesion(AR_JUGADORES);
+                                }
+                            }
+                        }
+                    }
+                    jugarPvP(tablero, p1, p2, jugadorLogueado, jugador2);
                 } else {
                     p1 = 'X';
                     p2 = 'O';
                     int dificultad = modoDificultad();
+                    stJugador jugador2;
+                    jugador2.idJugador = -1;
                     if (dificultad == 1) {
                         modoFacil(tablero, p1, p2, jugadorLogueado);
                     } else if (dificultad == 2) {
@@ -111,39 +133,39 @@ int main() {
                 break;
             }
             case 2:
-                if(jugadorLogueado.idJugador == -1){
+                if (jugadorLogueado.idJugador == -1) {
                     jugadorLogueado = iniciarSesion(AR_JUGADORES);
-                    if(jugadorLogueado.idJugador != -1){
-                        printf("Inicio de sesion exitoso!\n");
+                    if (jugadorLogueado.idJugador != -1) {
+                        printf("Inicio de sesión exitoso!\n");
                     } else {
-                        printf("Email o contrasena incorrectos.\n");
+                        printf("Email o contraseña incorrectos.\n");
                     }
                 } else {
                     menuVerPerfil(&jugadorLogueado);
                 }
                 break;
             case 3:
-                if(jugadorLogueado.idJugador == -1){
+                if (jugadorLogueado.idJugador == -1) {
                     registrarJugador(AR_JUGADORES);
                 } else {
                     mostrarEstadisticas(jugadorLogueado, AR_PARTIDAXJUGADOR);
                 }
                 break;
             case 4:
-                if(jugadorLogueado.idJugador != -1){
+                if (jugadorLogueado.idJugador != -1) {
                     mostrarRanking(AR_JUGADORES);
                 } else {
                     salir = 1;
                 }
                 break;
             case 5:
-                if(jugadorLogueado.idJugador != -1){
+                if (jugadorLogueado.idJugador != -1) {
                     jugadorLogueado.idJugador = -1;
-                    printf("Sesion cerrada.\n");
+                    printf("Sesión cerrada.\n");
                 }
                 break;
             case 6:
-                if(jugadorLogueado.idJugador != -1){
+                if (jugadorLogueado.idJugador != -1) {
                     salir = 1;
                 }
                 break;
@@ -151,7 +173,7 @@ int main() {
                 break;
         }
         if (!salir) {
-            printf("\nPresione ENTER para volver al menu principal...");
+            printf("\nPresione ENTER para volver al menú principal...");
             getchar(); getchar();
             system("cls");
         }
@@ -169,39 +191,530 @@ int mostrarMenuPrincipal(stJugador jugadorLogueado) {
 
     while (flag) {
         printf("=== TA-TE-TI ===\n");
-        if(jugadorLogueado.idJugador != -1){
+        if (jugadorLogueado.idJugador != -1) {
             printf("Bienvenido, %s!\n", jugadorLogueado.username);
             printf("-------------------\n");
             maxOpcion = 6;
         }
 
-        printf("1 - Partida rapida\n");
+        if (jugadorLogueado.idJugador == -1) {
+            printf("1 - Partida rápida\n");
+        } else {
+            printf("1 - Iniciar partida\n");
+        }
 
-        if(jugadorLogueado.idJugador == -1){
-            printf("2 - Iniciar sesion\n");
+        if (jugadorLogueado.idJugador == -1) {
+            printf("2 - Iniciar sesión\n");
             printf("3 - Registrarse\n");
             printf("4 - Salir\n");
         } else {
             printf("2 - Ver/Modificar mi perfil\n");
-            printf("3 - Ver mis estadisticas\n");
+            printf("3 - Ver mis estadísticas\n");
             printf("4 - Ranking de jugadores\n");
-            printf("5 - Cerrar sesion\n");
+            printf("5 - Cerrar sesión\n");
             printf("6 - Salir del juego\n");
         }
 
-        printf("Seleccione una opcion: ");
+        printf("Seleccione una opción: ");
         scanf("%d", &opcion);
 
         if (opcion >= 1 && opcion <= maxOpcion) {
             flag = 0;
             resultado = opcion;
         } else {
-            printf("Opcion invalida. Intente de nuevo.\n");
-            while(getchar() != '\n');
+            printf("Opción inválida. Intente de nuevo.\n");
+            while (getchar() != '\n');
             system("pause");
             system("cls");
         }
     }
+    return resultado;
+}
+
+void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugador1, stJugador jugador2) {
+    int turno = 0;
+    int fila = 0;
+    int columna = 0;
+    char actual;
+    int juegoTerminado = 0;
+
+    while (!juegoTerminado) {
+        mostrarTablero(tablero);
+        actual = (turno % 2 == 0) ? p1 : p2;
+        turnoJugador(tablero, &fila, &columna, actual);
+        tablero[fila][columna] = actual;
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugador1, jugador2, 0, 0, p1, p2);
+    }
+}
+
+int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador jugador1, stJugador jugador2, int esContraCpu, int dificultad, char p1, char p2) {
+    int victoria = hayGanador(tablero, actual);
+    int empateJuego = empate(tablero);
+    int resultado = 0;
+
+    if (victoria || empateJuego) {
+        mostrarTablero(tablero);
+        if (victoria) {
+            if (esContraCpu) {
+                if (actual == p1) {
+                    printf("Jugador (%c) gana!\n", actual);
+                } else {
+                    printf("Máquina (%c) gana!\n", actual);
+                }
+            } else {
+                if (actual == p1) {
+                    printf("Jugador 1 (%c) gana!\n", actual);
+                } else {
+                    printf("Jugador 2 (%c) gana!\n", actual);
+                }
+            }
+        } else {
+            printf("Empate!\n");
+        }
+        *juegoTerminado = 1;
+        resultado = 1;
+
+        if (esContraCpu) {
+            if (jugador1.idJugador != -1) {
+                stPartida partida;
+                partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
+                partida.dificultad = dificultad;
+                partida.esContraCpu = 1;
+                guardarPartida(partida, AR_PARTIDAS);
+
+                stPartidaXJugador pxj;
+                pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+                pxj.idPartida = partida.idPartida;
+                pxj.idJugador = jugador1.idJugador;
+                if (victoria && actual == p1) {
+                    pxj.resultado = 1;
+                    pxj.puntosJugador = 3;
+                } else if (empateJuego) {
+                    pxj.resultado = 2;
+                    pxj.puntosJugador = 1;
+                } else {
+                    pxj.resultado = 0;
+                    pxj.puntosJugador = 0;
+                }
+                guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
+                jugador1.ptsTotales += pxj.puntosJugador;
+                actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+            }
+        } else {
+            if (jugador1.idJugador != -1 && jugador2.idJugador != -1) {
+                stPartida partida;
+                partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
+                partida.dificultad = 0;
+                partida.esContraCpu = 0;
+                guardarPartida(partida, AR_PARTIDAS);
+
+                stPartidaXJugador pxj1;
+                pxj1.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+                pxj1.idPartida = partida.idPartida;
+                pxj1.idJugador = jugador1.idJugador;
+                if (victoria && actual == p1) {
+                    pxj1.resultado = 1;
+                    pxj1.puntosJugador = 3;
+                } else if (empateJuego) {
+                    pxj1.resultado = 2;
+                    pxj1.puntosJugador = 1;
+                } else {
+                    pxj1.resultado = 0;
+                    pxj1.puntosJugador = 0;
+                }
+                guardarPartidaXJugador(pxj1, AR_PARTIDAXJUGADOR);
+
+                stPartidaXJugador pxj2;
+                pxj2.idPartidaJugador = pxj1.idPartidaJugador + 1;
+                pxj2.idPartida = partida.idPartida;
+                pxj2.idJugador = jugador2.idJugador;
+                if (victoria && actual == p2) {
+                    pxj2.resultado = 1;
+                    pxj2.puntosJugador = 3;
+                } else if (empateJuego) {
+                    pxj2.resultado = 2;
+                    pxj2.puntosJugador = 1;
+                } else {
+                    pxj2.resultado = 0;
+                    pxj2.puntosJugador = 0;
+                }
+                guardarPartidaXJugador(pxj2, AR_PARTIDAXJUGADOR);
+
+                jugador1.ptsTotales += pxj1.puntosJugador;
+                jugador2.ptsTotales += pxj2.puntosJugador;
+                actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+                actualizarJugadorEnArchivo(jugador2, AR_JUGADORES);
+            } else if (jugador1.idJugador != -1) {
+                stPartida partida;
+                partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
+                partida.dificultad = 0;
+                partida.esContraCpu = 0;
+                guardarPartida(partida, AR_PARTIDAS);
+
+                stPartidaXJugador pxj;
+                pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+                pxj.idPartida = partida.idPartida;
+                pxj.idJugador = jugador1.idJugador;
+                if (victoria && actual == p1) {
+                    pxj.resultado = 1;
+                    pxj.puntosJugador = 3;
+                } else if (empateJuego) {
+                    pxj.resultado = 2;
+                    pxj.puntosJugador = 1;
+                } else {
+                    pxj.resultado = 0;
+                    pxj.puntosJugador = 0;
+                }
+                guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
+                jugador1.ptsTotales += pxj.puntosJugador;
+                actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+            }
+        }
+    } else {
+        (*turno)++;
+        resultado = 0;
+    }
+
+    return resultado;
+}
+
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
+    int turno = 0;
+    int fila = 0;
+    int columna = 0;
+    char actual;
+    int juegoTerminado = 0;
+    stJugador jugador2;
+    jugador2.idJugador = -1;
+
+    while (!juegoTerminado) {
+        mostrarTablero(tablero);
+        actual = (turno % 2 == 0) ? jugador : maquina;
+
+        if (actual == jugador) {
+            turnoJugador(tablero, &fila, &columna, actual);
+        } else {
+            do {
+                fila = rand() % 3;
+                columna = rand() % 3;
+            } while (movimientoInvalido(tablero, fila, columna));
+        }
+
+        tablero[fila][columna] = actual;
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, jugador2, 1, 1, jugador, maquina);
+    }
+}
+
+void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
+    int turno = 0;
+    int fila = 0;
+    int columna = 0;
+    char actual;
+    int juegoTerminado = 0;
+    stJugador jugador2;
+    jugador2.idJugador = -1;
+
+    while (!juegoTerminado) {
+        mostrarTablero(tablero);
+        actual = (turno % 2 == 0) ? jugador : maquina;
+
+        if (actual == jugador) {
+            turnoJugador(tablero, &fila, &columna, actual);
+        } else {
+            int bloqueado = 0;
+            int i, j;
+
+            for (i = 0; i < FILAS && !bloqueado; i++) {
+                for (j = 0; j < COLUMNAS && !bloqueado; j++) {
+                    if (tablero[i][j] == ' ') {
+                        tablero[i][j] = jugador;
+                        if (hayGanador(tablero, jugador)) {
+                            tablero[i][j] = maquina;
+                            fila = i;
+                            columna = j;
+                            bloqueado = 1;
+                        } else {
+                            tablero[i][j] = ' ';
+                        }
+                    }
+                }
+            }
+
+            if (!bloqueado) {
+                do {
+                    fila = rand() % 3;
+                    columna = rand() % 3;
+                } while (movimientoInvalido(tablero, fila, columna));
+            }
+        }
+
+        tablero[fila][columna] = actual;
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, jugador2, 1, 2, jugador, maquina);
+    }
+}
+
+void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
+    int turno = 0;
+    int fila = 0;
+    int columna = 0;
+    char actual;
+    int juegoTerminado = 0;
+    stJugador jugador2;
+    jugador2.idJugador = -1;
+
+    while (!juegoTerminado) {
+        mostrarTablero(tablero);
+        actual = (turno % 2 == 0) ? jugador : maquina;
+
+        if (actual == jugador) {
+            turnoJugador(tablero, &fila, &columna, actual);
+        } else {
+            int mejorValor = -1000;
+            int valor;
+            int i, j;
+
+            for (i = 0; i < FILAS; i++) {
+                for (j = 0; j < COLUMNAS; j++) {
+                    if (tablero[i][j] == ' ') {
+                        tablero[i][j] = maquina;
+                        valor = minimax(tablero, 0, 0, jugador, maquina);
+                        tablero[i][j] = ' ';
+                        if (valor > mejorValor) {
+                            mejorValor = valor;
+                            fila = i;
+                            columna = j;
+                        }
+                    }
+                }
+            }
+        }
+
+        tablero[fila][columna] = actual;
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, jugador2, 1, 3, jugador, maquina);
+    }
+}
+
+// Resto de las funciones sin cambios
+int mostrarMenuJuego() {
+    int opcion = 0;
+    int flag = 1;
+    int resultado = 0;
+
+    while (flag) {
+        printf("=== TA-TE-TI ===\n");
+        printf("=== MODO DE JUEGO ===\n");
+        printf("1 - Jugador vs Jugador\n");
+        printf("2 - Jugador vs Máquina\n");
+        printf("Seleccione una opción: ");
+        scanf("%d", &opcion);
+        if (opcion == 1 || opcion == 2) {
+            flag = 0;
+            resultado = opcion;
+        } else {
+            printf("Opción inválida. Intente de nuevo.\n");
+        }
+    }
+
+    return resultado;
+}
+
+void inicializarTablero(char tablero[FILAS][COLUMNAS]) {
+    int i, j;
+    for (i = 0; i < FILAS; i++) {
+        for (j = 0; j < COLUMNAS; j++) {
+            tablero[i][j] = ' ';
+        }
+    }
+}
+
+int modoDificultad() {
+    int dificultad = 0;
+    int flag = 1;
+    int resultado = 0;
+
+    while (flag) {
+        printf("Seleccione dificultad:\n");
+        printf("1 - Fácil\n");
+        printf("2 - Medio\n");
+        printf("3 - Difícil\n");
+        printf("Elección: ");
+        scanf("%d", &dificultad);
+        if (dificultad >= 1 && dificultad <= 3) {
+            flag = 0;
+            resultado = dificultad;
+        } else {
+            printf("Opción inválida. Intente de nuevo.\n");
+        }
+    }
+
+    system("cls");
+    return resultado;
+}
+
+void seleccionPiezas(char *p1, char *p2) {
+    int flag = 1;
+    char entrada;
+
+    while (flag) {
+        printf("Jugador 1, elija su ficha (X o O): ");
+        scanf(" %c", &entrada);
+        *p1 = toupper(entrada);
+        if (*p1 == 'X' || *p1 == 'O') {
+            flag = 0;
+        } else {
+            printf("Ficha inválida. Intente de nuevo.\n");
+        }
+    }
+
+    *p2 = (*p1 == 'X') ? 'O' : 'X';
+    printf("Jugador 1: %c | Jugador 2: %c\n", *p1, *p2);
+}
+
+void mostrarTablero(char tablero[FILAS][COLUMNAS]) {
+    int i, j;
+    printf("\n   0   1   2\n");
+
+    for (i = 0; i < FILAS; i++) {
+        printf("%d ", i);
+        for (j = 0; j < COLUMNAS; j++) {
+            printf(" %c ", tablero[i][j]);
+            if (j < COLUMNAS - 1) {
+                printf("|");
+            }
+        }
+        printf("\n");
+        if (i < FILAS - 1) {
+            printf("  ---+---+---\n");
+        }
+    }
+    printf("\n");
+}
+
+void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char actual) {
+    int flag = 1;
+    int filaTemp, columnaTemp;
+
+    printf("Turno del Jugador (%c)\n", actual);
+
+    while (flag) {
+        printf("Ingrese fila (0-2): ");
+        scanf("%d", &filaTemp);
+        printf("Ingrese columna (0-2): ");
+        scanf("%d", &columnaTemp);
+        if (!movimientoInvalido(tablero, filaTemp, columnaTemp)) {
+            *fila = filaTemp;
+            *columna = columnaTemp;
+            flag = 0;
+        } else {
+            printf("Movimiento inválido. Intente de nuevo.\n");
+        }
+    }
+}
+
+int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna) {
+    int invalido = 1;
+
+    if (fila >= 0 && fila < FILAS && columna >= 0 && columna < COLUMNAS && tablero[fila][columna] == ' ') {
+        invalido = 0;
+    }
+
+    return invalido;
+}
+
+int hayGanador(char tablero[FILAS][COLUMNAS], char jugador) {
+    int ganador = 0;
+    int i;
+
+    for (i = 0; i < FILAS && !ganador; i++) {
+        if (tablero[i][0] == jugador && tablero[i][1] == jugador && tablero[i][2] == jugador) {
+            ganador = 1;
+        }
+        if (tablero[0][i] == jugador && tablero[1][i] == jugador && tablero[2][i] == jugador) {
+            ganador = 1;
+        }
+    }
+
+    if (!ganador) {
+        if (tablero[0][0] == jugador && tablero[1][1] == jugador && tablero[2][2] == jugador) {
+            ganador = 1;
+        } else if (tablero[0][2] == jugador && tablero[1][1] == jugador && tablero[2][0] == jugador) {
+            ganador = 1;
+        }
+    }
+
+    return ganador;
+}
+
+int empate(char tablero[FILAS][COLUMNAS]) {
+    int lleno = 1;
+    int i, j;
+
+    for (i = 0; i < FILAS && lleno; i++) {
+        for (j = 0; j < COLUMNAS && lleno; j++) {
+            if (tablero[i][j] == ' ') {
+                lleno = 0;
+            }
+        }
+    }
+
+    return lleno;
+}
+
+int evaluarEstado(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
+    int puntaje = 0;
+
+    if (hayGanador(tablero, maquina)) {
+        puntaje = 10;
+    } else if (hayGanador(tablero, jugador)) {
+        puntaje = -10;
+    }
+
+    return puntaje;
+}
+
+int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, char jugador, char maquina) {
+    int puntaje = evaluarEstado(tablero, jugador, maquina);
+    int resultado = 0;
+    int i, j;
+
+    if (puntaje == 10 || puntaje == -10 || empate(tablero)) {
+        resultado = puntaje;
+    } else if (esMaximizador) {
+        int mejor = -1000;
+        int valor;
+
+        for (i = 0; i < FILAS; i++) {
+            for (j = 0; j < COLUMNAS; j++) {
+                if (tablero[i][j] == ' ') {
+                    tablero[i][j] = maquina;
+                    valor = minimax(tablero, profundidad + 1, 0, jugador, maquina);
+                    tablero[i][j] = ' ';
+                    if (valor > mejor) {
+                        mejor = valor;
+                    }
+                }
+            }
+        }
+        resultado = mejor;
+    } else {
+        int peor = 1000;
+        int valor;
+
+        for (i = 0; i < FILAS; i++) {
+            for (j = 0; j < COLUMNAS; j++) {
+                if (tablero[i][j] == ' ') {
+                    tablero[i][j] = jugador;
+                    valor = minimax(tablero, profundidad + 1, 1, jugador, maquina);
+                    tablero[i][j] = ' ';
+                    if (valor < peor) {
+                        peor = valor;
+                    }
+                }
+            }
+        }
+        resultado = peor;
+    }
+
     return resultado;
 }
 
@@ -629,408 +1142,6 @@ void ordenarRanking(stJugador jugadores[], int validos) {
             }
         }
     }
-}
-
-int mostrarMenuJuego() {
-    int opcion = 0;
-    int flag = 1;
-    int resultado = 0;
-
-    while (flag) {
-        printf("=== TA-TE-TI ===\n");
-        printf("=== MODO DE JUEGO ===\n");
-        printf("1 - Jugador vs Jugador\n");
-        printf("2 - Jugador vs Maquina\n");
-        printf("Seleccione una opcion: ");
-        scanf("%d", &opcion);
-        if (opcion == 1 || opcion == 2) {
-            flag = 0;
-            resultado = opcion;
-        } else {
-            printf("Opcion invalida. Intente de nuevo.\n");
-        }
-    }
-
-    return resultado;
-}
-
-void inicializarTablero(char tablero[FILAS][COLUMNAS]) {
-    int i, j;
-    for (i = 0; i < FILAS; i++) {
-        for (j = 0; j < COLUMNAS; j++) {
-            tablero[i][j] = ' ';
-        }
-    }
-}
-
-int modoDificultad() {
-    int dificultad = 0;
-    int flag = 1;
-    int resultado = 0;
-
-    while (flag) {
-        printf("Seleccione dificultad:\n");
-        printf("1 - Facil\n");
-        printf("2 - Medio\n");
-        printf("3 - Dificil\n");
-        printf("Eleccion: ");
-        scanf("%d", &dificultad);
-        if (dificultad >= 1 && dificultad <= 3) {
-            flag = 0;
-            resultado = dificultad;
-        } else {
-            printf("Opcion invalida. Intente de nuevo.\n");
-        }
-    }
-
-    system("cls");
-    return resultado;
-}
-
-void seleccionPiezas(char *p1, char *p2) {
-    int flag = 1;
-    char entrada;
-
-    while (flag) {
-        printf("Jugador 1, elija su ficha (X o O): ");
-        scanf(" %c", &entrada);
-        *p1 = toupper(entrada);
-        if (*p1 == 'X' || *p1 == 'O') {
-            flag = 0;
-        } else {
-            printf("Ficha invalida. Intente de nuevo.\n");
-        }
-    }
-
-    *p2 = (*p1 == 'X') ? 'O' : 'X';
-    printf("Jugador 1: %c | Jugador 2: %c\n", *p1, *p2);
-}
-
-void mostrarTablero(char tablero[FILAS][COLUMNAS]) {
-    int i, j;
-    printf("\n   0   1   2\n");
-
-    for (i = 0; i < FILAS; i++) {
-        printf("%d ", i);
-        for (j = 0; j < COLUMNAS; j++) {
-            printf(" %c ", tablero[i][j]);
-            if (j < COLUMNAS - 1) {
-                printf("|");
-            }
-        }
-        printf("\n");
-        if (i < FILAS - 1) {
-            printf("  ---+---+---\n");
-        }
-    }
-    printf("\n");
-}
-
-void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char actual) {
-    int flag = 1;
-    int filaTemp, columnaTemp;
-
-    printf("Turno del Jugador (%c)\n", actual);
-
-    while (flag) {
-        printf("Ingrese fila (0-2): ");
-        scanf("%d", &filaTemp);
-        printf("Ingrese columna (0-2): ");
-        scanf("%d", &columnaTemp);
-        if (!movimientoInvalido(tablero, filaTemp, columnaTemp)) {
-            *fila = filaTemp;
-            *columna = columnaTemp;
-            flag = 0;
-        } else {
-            printf("Movimiento invalido. Intente de nuevo.\n");
-        }
-    }
-}
-
-int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna) {
-    int invalido = 1;
-
-    if (fila >= 0 && fila < FILAS && columna >= 0 && columna < COLUMNAS && tablero[fila][columna] == ' ') {
-        invalido = 0;
-    }
-
-    return invalido;
-}
-
-int hayGanador(char tablero[FILAS][COLUMNAS], char jugador) {
-    int ganador = 0;
-    int i;
-
-    for (i = 0; i < FILAS && !ganador; i++) {
-        if (tablero[i][0] == jugador && tablero[i][1] == jugador && tablero[i][2] == jugador) {
-            ganador = 1;
-        }
-        if (tablero[0][i] == jugador && tablero[1][i] == jugador && tablero[2][i] == jugador) {
-            ganador = 1;
-        }
-    }
-
-    if (!ganador) {
-        if (tablero[0][0] == jugador && tablero[1][1] == jugador && tablero[2][2] == jugador) {
-            ganador = 1;
-        } else if (tablero[0][2] == jugador && tablero[1][1] == jugador && tablero[2][0] == jugador) {
-            ganador = 1;
-        }
-    }
-
-    return ganador;
-}
-
-int empate(char tablero[FILAS][COLUMNAS]) {
-    int lleno = 1;
-    int i, j;
-
-    for (i = 0; i < FILAS && lleno; i++) {
-        for (j = 0; j < COLUMNAS && lleno; j++) {
-            if (tablero[i][j] == ' ') {
-                lleno = 0;
-            }
-        }
-    }
-
-    return lleno;
-}
-
-void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugadorLogueado) {
-    int turno = 0;
-    int fila = 0;
-    int columna = 0;
-    char actual;
-    int juegoTerminado = 0;
-
-    while (!juegoTerminado) {
-        mostrarTablero(tablero);
-        actual = (turno % 2 == 0) ? p1 : p2;
-        turnoJugador(tablero, &fila, &columna, actual);
-        tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, (turno % 2) + 1, jugadorLogueado, 0, 0);
-    }
-}
-
-void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
-    int turno = 0;
-    int fila = 0;
-    int columna = 0;
-    char actual;
-    int juegoTerminado = 0;
-
-    while (!juegoTerminado) {
-        mostrarTablero(tablero);
-        actual = (turno % 2 == 0) ? jugador : maquina;
-
-        if (actual == jugador) {
-            turnoJugador(tablero, &fila, &columna, actual);
-        } else {
-            do {
-                fila = rand() % 3;
-                columna = rand() % 3;
-            } while (movimientoInvalido(tablero, fila, columna));
-        }
-
-        tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0, jugadorLogueado, 1, 1);
-    }
-}
-
-void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
-    int turno = 0;
-    int fila = 0;
-    int columna = 0;
-    char actual;
-    int juegoTerminado = 0;
-
-    while (!juegoTerminado) {
-        mostrarTablero(tablero);
-        actual = (turno % 2 == 0) ? jugador : maquina;
-
-        if (actual == jugador) {
-            turnoJugador(tablero, &fila, &columna, actual);
-        } else {
-            int bloqueado = 0;
-            int i, j;
-
-            for (i = 0; i < FILAS && !bloqueado; i++) {
-                for (j = 0; j < COLUMNAS && !bloqueado; j++) {
-                    if (tablero[i][j] == ' ') {
-                        tablero[i][j] = jugador;
-                        if (hayGanador(tablero, jugador)) {
-                            tablero[i][j] = maquina;
-                            fila = i;
-                            columna = j;
-                            bloqueado = 1;
-                        } else {
-                            tablero[i][j] = ' ';
-                        }
-                    }
-                }
-            }
-
-            if (!bloqueado) {
-                do {
-                    fila = rand() % 3;
-                    columna = rand() % 3;
-                } while (movimientoInvalido(tablero, fila, columna));
-            }
-        }
-
-        tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0, jugadorLogueado, 1, 2);
-    }
-}
-
-int evaluarEstado(char tablero[FILAS][COLUMNAS], char jugador, char maquina) {
-    int puntaje = 0;
-
-    if (hayGanador(tablero, maquina)) {
-        puntaje = 10;
-    } else if (hayGanador(tablero, jugador)) {
-        puntaje = -10;
-    }
-
-    return puntaje;
-}
-
-int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, char jugador, char maquina) {
-    int puntaje = evaluarEstado(tablero, jugador, maquina);
-    int resultado = 0;
-    int i, j;
-
-    if (puntaje == 10 || puntaje == -10 || empate(tablero)) {
-        resultado = puntaje;
-    } else if (esMaximizador) {
-        int mejor = -1000;
-        int valor;
-
-        for (i = 0; i < FILAS; i++) {
-            for (j = 0; j < COLUMNAS; j++) {
-                if (tablero[i][j] == ' ') {
-                    tablero[i][j] = maquina;
-                    valor = minimax(tablero, profundidad + 1, 0, jugador, maquina);
-                    tablero[i][j] = ' ';
-                    if (valor > mejor) {
-                        mejor = valor;
-                    }
-                }
-            }
-        }
-        resultado = mejor;
-    } else {
-        int peor = 1000;
-        int valor;
-
-        for (i = 0; i < FILAS; i++) {
-            for (j = 0; j < COLUMNAS; j++) {
-                if (tablero[i][j] == ' ') {
-                    tablero[i][j] = jugador;
-                    valor = minimax(tablero, profundidad + 1, 1, jugador, maquina);
-                    tablero[i][j] = ' ';
-                    if (valor < peor) {
-                        peor = valor;
-                    }
-                }
-            }
-        }
-        resultado = peor;
-    }
-
-    return resultado;
-}
-
-void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
-    int turno = 0;
-    int fila = 0;
-    int columna = 0;
-    char actual;
-    int juegoTerminado = 0;
-
-    while (!juegoTerminado) {
-        mostrarTablero(tablero);
-        actual = (turno % 2 == 0) ? jugador : maquina;
-
-        if (actual == jugador) {
-            turnoJugador(tablero, &fila, &columna, actual);
-        } else {
-            int mejorValor = -1000;
-            int valor;
-            int i, j;
-
-            for (i = 0; i < FILAS; i++) {
-                for (j = 0; j < COLUMNAS; j++) {
-                    if (tablero[i][j] == ' ') {
-                        tablero[i][j] = maquina;
-                        valor = minimax(tablero, 0, 0, jugador, maquina);
-                        tablero[i][j] = ' ';
-                        if (valor > mejorValor) {
-                            mejorValor = valor;
-                            fila = i;
-                            columna = j;
-                        }
-                    }
-                }
-            }
-        }
-
-        tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, 0, jugadorLogueado, 1, 3);
-    }
-}
-
-int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, int esJugador, stJugador jugadorLogueado, int esContraCpu, int dificultad) {
-    int victoria = hayGanador(tablero, actual);
-    int empateJuego = empate(tablero);
-    int resultado = 0;
-
-    if (victoria || empateJuego) {
-        mostrarTablero(tablero);
-        if (victoria) {
-            if (esJugador == 1 || esJugador == 2) {
-                printf("Jugador %d (%c) gana!\n", esJugador, actual);
-            } else {
-                printf("%c gana!\n", actual);
-            }
-        } else {
-            printf("Empate!\n");
-        }
-        *juegoTerminado = 1;
-        resultado = 1;
-
-        if (jugadorLogueado.idJugador != -1) {
-            stPartida partida;
-            partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
-            partida.dificultad = dificultad;
-            partida.esContraCpu = esContraCpu;
-            guardarPartida(partida, AR_PARTIDAS);
-
-            stPartidaXJugador pxj;
-            pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
-            pxj.idPartida = partida.idPartida;
-            pxj.idJugador = jugadorLogueado.idJugador;
-            if (victoria && actual == 'X') {
-                pxj.resultado = 1;
-                pxj.puntosJugador = 3;
-            } else if (empateJuego) {
-                pxj.resultado = 2;
-                pxj.puntosJugador = 1;
-            } else {
-                pxj.resultado = 0;
-                pxj.puntosJugador = 0;
-            }
-            guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
-
-            jugadorLogueado.ptsTotales += pxj.puntosJugador;
-            actualizarJugadorEnArchivo(jugadorLogueado, AR_JUGADORES);
-        }
-    } else {
-        (*turno)++;
-        resultado = 0;
-    }
-
-    return resultado;
 }
 
 void guardarPartida(stPartida partida, char nombreArchivo[]) {
