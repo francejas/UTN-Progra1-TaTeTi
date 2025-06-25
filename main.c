@@ -11,6 +11,17 @@
 #define AR_PARTIDAS "partidas.dat"
 #define AR_PARTIDAXJUGADOR "partidaXjugador.dat"
 
+// Constantes para puntuación
+#define PUNTOS_VICTORIA 3
+#define PUNTOS_EMPATE 1
+#define PUNTOS_DERROTA 0
+
+// Constantes para resultados
+#define RESULTADO_DERROTA 0
+#define RESULTADO_VICTORIA 1
+#define RESULTADO_EMPATE 2
+#define RESULTADO_EN_CURSO -1
+
 typedef struct {
     int idJugador;
     char nombre[30];
@@ -53,6 +64,8 @@ void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char a
 int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, char jugador, char maquina);
 int evaluarEstado(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
 int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador jugador1, stJugador jugador2, int esContraCpu, int dificultad, char p1, char p2);
+int verificarResultadoJuego(char tablero[FILAS][COLUMNAS], char actual);
+void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resultado, char actual, char p1, char p2, int esContraCpu, int dificultad);
 
 int mostrarMenuPrincipal(stJugador jugadorLogueado);
 stJugador iniciarSesion(char nombreArchivo[]);
@@ -247,10 +260,20 @@ void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugador
     }
 }
 
+int verificarResultadoJuego(char tablero[FILAS][COLUMNAS], char actual) {
+    if (hayGanador(tablero, actual)) {
+        return RESULTADO_VICTORIA;
+    } else if (empate(tablero)) {
+        return RESULTADO_EMPATE;
+    } else {
+        return RESULTADO_EN_CURSO;
+    }
+}
+
 int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador jugador1, stJugador jugador2, int esContraCpu, int dificultad, char p1, char p2) {
-    int victoria = hayGanador(tablero, actual);
-    int empateJuego = empate(tablero);
-    int resultado = 0;
+    int resultado = verificarResultadoJuego(tablero, actual);
+    int victoria = (resultado == RESULTADO_VICTORIA);
+    int empateJuego = (resultado == RESULTADO_EMPATE);
 
     if (victoria || empateJuego) {
         mostrarTablero(tablero);
@@ -272,110 +295,110 @@ int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoT
             printf("Empate!\n");
         }
         *juegoTerminado = 1;
-        resultado = 1;
 
         if (esContraCpu) {
             if (jugador1.idJugador != -1) {
-                stPartida partida;
-                partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
-                partida.dificultad = dificultad;
-                partida.esContraCpu = 1;
-                guardarPartida(partida, AR_PARTIDAS);
-
-                stPartidaXJugador pxj;
-                pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
-                pxj.idPartida = partida.idPartida;
-                pxj.idJugador = jugador1.idJugador;
-                if (victoria && actual == p1) {
-                    pxj.resultado = 1;
-                    pxj.puntosJugador = 3;
-                } else if (empateJuego) {
-                    pxj.resultado = 2;
-                    pxj.puntosJugador = 1;
-                } else {
-                    pxj.resultado = 0;
-                    pxj.puntosJugador = 0;
-                }
-                guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
-                jugador1.ptsTotales += pxj.puntosJugador;
-                actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+                guardarResultadoPartida(jugador1, jugador2, resultado, actual, p1, p2, esContraCpu, dificultad);
             }
         } else {
             if (jugador1.idJugador != -1 && jugador2.idJugador != -1) {
-                stPartida partida;
-                partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
-                partida.dificultad = 0;
-                partida.esContraCpu = 0;
-                guardarPartida(partida, AR_PARTIDAS);
-
-                stPartidaXJugador pxj1;
-                pxj1.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
-                pxj1.idPartida = partida.idPartida;
-                pxj1.idJugador = jugador1.idJugador;
-                if (victoria && actual == p1) {
-                    pxj1.resultado = 1;
-                    pxj1.puntosJugador = 3;
-                } else if (empateJuego) {
-                    pxj1.resultado = 2;
-                    pxj1.puntosJugador = 1;
-                } else {
-                    pxj1.resultado = 0;
-                    pxj1.puntosJugador = 0;
-                }
-                guardarPartidaXJugador(pxj1, AR_PARTIDAXJUGADOR);
-
-                stPartidaXJugador pxj2;
-                pxj2.idPartidaJugador = pxj1.idPartidaJugador + 1;
-                pxj2.idPartida = partida.idPartida;
-                pxj2.idJugador = jugador2.idJugador;
-                if (victoria && actual == p2) {
-                    pxj2.resultado = 1;
-                    pxj2.puntosJugador = 3;
-                } else if (empateJuego) {
-                    pxj2.resultado = 2;
-                    pxj2.puntosJugador = 1;
-                } else {
-                    pxj2.resultado = 0;
-                    pxj2.puntosJugador = 0;
-                }
-                guardarPartidaXJugador(pxj2, AR_PARTIDAXJUGADOR);
-
-                jugador1.ptsTotales += pxj1.puntosJugador;
-                jugador2.ptsTotales += pxj2.puntosJugador;
-                actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
-                actualizarJugadorEnArchivo(jugador2, AR_JUGADORES);
+                guardarResultadoPartida(jugador1, jugador2, resultado, actual, p1, p2, esContraCpu, dificultad);
             } else if (jugador1.idJugador != -1) {
-                stPartida partida;
-                partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
-                partida.dificultad = 0;
-                partida.esContraCpu = 0;
-                guardarPartida(partida, AR_PARTIDAS);
-
-                stPartidaXJugador pxj;
-                pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
-                pxj.idPartida = partida.idPartida;
-                pxj.idJugador = jugador1.idJugador;
-                if (victoria && actual == p1) {
-                    pxj.resultado = 1;
-                    pxj.puntosJugador = 3;
-                } else if (empateJuego) {
-                    pxj.resultado = 2;
-                    pxj.puntosJugador = 1;
-                } else {
-                    pxj.resultado = 0;
-                    pxj.puntosJugador = 0;
-                }
-                guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
-                jugador1.ptsTotales += pxj.puntosJugador;
-                actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+                guardarResultadoPartida(jugador1, jugador2, resultado, actual, p1, p2, esContraCpu, dificultad);
             }
         }
+        return 1;
     } else {
         (*turno)++;
-        resultado = 0;
+        return 0;
     }
+}
 
-    return resultado;
+void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resultado, char actual, char p1, char p2, int esContraCpu, int dificultad) {
+    stPartida partida;
+    partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
+    partida.dificultad = esContraCpu ? dificultad : 0;
+    partida.esContraCpu = esContraCpu;
+    guardarPartida(partida, AR_PARTIDAS);
+
+    if (esContraCpu) {
+        if (jugador1.idJugador != -1) {
+            stPartidaXJugador pxj;
+            pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+            pxj.idPartida = partida.idPartida;
+            pxj.idJugador = jugador1.idJugador;
+            if (resultado == RESULTADO_VICTORIA && actual == p1) {
+                pxj.resultado = RESULTADO_VICTORIA;
+                pxj.puntosJugador = PUNTOS_VICTORIA;
+            } else if (resultado == RESULTADO_EMPATE) {
+                pxj.resultado = RESULTADO_EMPATE;
+                pxj.puntosJugador = PUNTOS_EMPATE;
+            } else {
+                pxj.resultado = RESULTADO_DERROTA;
+                pxj.puntosJugador = PUNTOS_DERROTA;
+            }
+            guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
+            jugador1.ptsTotales += pxj.puntosJugador;
+            actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+        }
+    } else {
+        if (jugador1.idJugador != -1 && jugador2.idJugador != -1) {
+            stPartidaXJugador pxj1;
+            pxj1.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+            pxj1.idPartida = partida.idPartida;
+            pxj1.idJugador = jugador1.idJugador;
+            if (resultado == RESULTADO_VICTORIA && actual == p1) {
+                pxj1.resultado = RESULTADO_VICTORIA;
+                pxj1.puntosJugador = PUNTOS_VICTORIA;
+            } else if (resultado == RESULTADO_EMPATE) {
+                pxj1.resultado = RESULTADO_EMPATE;
+                pxj1.puntosJugador = PUNTOS_EMPATE;
+            } else {
+                pxj1.resultado = RESULTADO_DERROTA;
+                pxj1.puntosJugador = PUNTOS_DERROTA;
+            }
+            guardarPartidaXJugador(pxj1, AR_PARTIDAXJUGADOR);
+
+            stPartidaXJugador pxj2;
+            pxj2.idPartidaJugador = pxj1.idPartidaJugador + 1;
+            pxj2.idPartida = partida.idPartida;
+            pxj2.idJugador = jugador2.idJugador;
+            if (resultado == RESULTADO_VICTORIA && actual == p2) {
+                pxj2.resultado = RESULTADO_VICTORIA;
+                pxj2.puntosJugador = PUNTOS_VICTORIA;
+            } else if (resultado == RESULTADO_EMPATE) {
+                pxj2.resultado = RESULTADO_EMPATE;
+                pxj2.puntosJugador = PUNTOS_EMPATE;
+            } else {
+                pxj2.resultado = RESULTADO_DERROTA;
+                pxj2.puntosJugador = PUNTOS_DERROTA;
+            }
+            guardarPartidaXJugador(pxj2, AR_PARTIDAXJUGADOR);
+
+            jugador1.ptsTotales += pxj1.puntosJugador;
+            jugador2.ptsTotales += pxj2.puntosJugador;
+            actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+            actualizarJugadorEnArchivo(jugador2, AR_JUGADORES);
+        } else if (jugador1.idJugador != -1) {
+            stPartidaXJugador pxj;
+            pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
+            pxj.idPartida = partida.idPartida;
+            pxj.idJugador = jugador1.idJugador;
+            if (resultado == RESULTADO_VICTORIA && actual == p1) {
+                pxj.resultado = RESULTADO_VICTORIA;
+                pxj.puntosJugador = PUNTOS_VICTORIA;
+            } else if (resultado == RESULTADO_EMPATE) {
+                pxj.resultado = RESULTADO_EMPATE;
+                pxj.puntosJugador = PUNTOS_EMPATE;
+            } else {
+                pxj.resultado = RESULTADO_DERROTA;
+                pxj.puntosJugador = PUNTOS_DERROTA;
+            }
+            guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
+            jugador1.ptsTotales += pxj.puntosJugador;
+            actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+        }
+    }
 }
 
 void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
@@ -886,11 +909,11 @@ void mostrarEstadisticas(stJugador jugador, char archivoPartidasXJugador[]) {
         while(fread(&pxj, sizeof(stPartidaXJugador), 1, fp) > 0) {
             if (pxj.idJugador == jugador.idJugador) {
                 jugadas++;
-                if (pxj.resultado == 1) {
+                if (pxj.resultado == RESULTADO_VICTORIA) {
                     ganadas++;
-                } else if (pxj.resultado == 2) {
+                } else if (pxj.resultado == RESULTADO_EMPATE) {
                     empatadas++;
-                } else {
+                } else if(pxj.resultado == RESULTADO_DERROTA){
                     derrotas++;
                 }
             }
