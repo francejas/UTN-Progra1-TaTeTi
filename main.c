@@ -777,12 +777,11 @@ void menuVerPerfil(stJugador* jugadorLogueado) {
         }
     }
 }
-
 void modificarPerfil(stJugador* jugador, char nombreArchivo[]) {
     int opcion = 0;
     char nuevaPass[20];
     int actualizado = 0;
-    stJugador copiaJugador = *jugador;
+    stJugador copiaJugador = *jugador; // Copia todos los datos actuales, incluyendo puntos
 
     system("cls");
     printf("--- MODIFICAR DATOS ---\n");
@@ -842,6 +841,11 @@ void modificarPerfil(stJugador* jugador, char nombreArchivo[]) {
             return;
     }
 
+    // IMPORTANTE: Asegurarse de que los puntos y el estado se mantengan
+    copiaJugador.ptsTotales = jugador->ptsTotales;
+    copiaJugador.eliminado = jugador->eliminado;
+    copiaJugador.idJugador = jugador->idJugador;
+
     actualizado = actualizarJugadorEnArchivo(copiaJugador, nombreArchivo);
 
     if(actualizado) {
@@ -858,17 +862,28 @@ int actualizarJugadorEnArchivo(stJugador jugador, char nombreArchivo[]) {
 
     if (fp == NULL) {
         printf("Error al abrir el archivo de jugadores.\n");
-    } else {
-        stJugador temp;
-        while(fread(&temp, sizeof(stJugador), 1, fp) > 0 && !actualizado) {
-            if(temp.idJugador == jugador.idJugador) {
-                fseek(fp, -sizeof(stJugador), SEEK_CUR);
-                fwrite(&jugador, sizeof(stJugador), 1, fp);
+        return 0;
+    }
+
+    stJugador temp;
+    long posicion = 0;
+
+    // Buscar el jugador por ID y guardar su posición
+    while(fread(&temp, sizeof(stJugador), 1, fp) > 0) {
+        if(temp.idJugador == jugador.idJugador) {
+            // Volver a la posición del registro encontrado
+            fseek(fp, posicion, SEEK_SET);
+
+            // Escribir el jugador actualizado
+            if(fwrite(&jugador, sizeof(stJugador), 1, fp) == 1) {
                 actualizado = 1;
             }
+            break;
         }
-        fclose(fp);
+        posicion = ftell(fp); // Guardar la posición actual
     }
+
+    fclose(fp);
     return actualizado;
 }
 
