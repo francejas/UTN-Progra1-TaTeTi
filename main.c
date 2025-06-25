@@ -216,17 +216,17 @@ int mostrarMenuPrincipal(stJugador jugadorLogueado) {
         }
 
         printf("Seleccione una opción: ");
-        scanf("%d", &opcion);
-
-        if (opcion >= 1 && opcion <= maxOpcion) {
+        if (scanf("%d", &opcion) != 1) {
+            while (getchar() != '\n'); // Limpia el búfer
+            printf("Entrada inválida. Por favor, ingrese un número.\n");
+        } else if (opcion >= 1 && opcion <= maxOpcion) {
             flag = 0;
             resultado = opcion;
         } else {
             printf("Opción inválida. Intente de nuevo.\n");
-            while (getchar() != '\n');
-            system("pause");
-            system("cls");
         }
+        system("pause");
+        system("cls");
     }
     return resultado;
 }
@@ -494,7 +494,6 @@ void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJu
     }
 }
 
-// Resto de las funciones sin cambios
 int mostrarMenuJuego() {
     int opcion = 0;
     int flag = 1;
@@ -1021,7 +1020,7 @@ int validarEmail(char email[], char nombreArchivo[], int idExcluir) {
         fp = fopen(nombreArchivo, "rb");
         if (fp != NULL) {
             while(fread(&jugador, sizeof(stJugador), 1, fp) > 0 && !existe){
-                if(strcmp(jugador.email, email) == 0 && jugador.idJugador != idExcluir){
+                if(strcmp(jugador.email, email) == 0 && jugador.eliminado == 0 && jugador.idJugador != idExcluir){
                     existe = 1;
                 }
             }
@@ -1042,7 +1041,7 @@ int validarUsername(char username[], char nombreArchivo[], int idExcluir) {
 
     if (fp != NULL) {
         while(fread(&jugador, sizeof(stJugador), 1, fp) > 0 && !existe){
-            if(strcmp(jugador.username, username) == 0 && jugador.idJugador != idExcluir){
+            if(strcmp(jugador.username, username) == 0 && jugador.eliminado == 0 && jugador.idJugador != idExcluir){
                 existe = 1;
             }
         }
@@ -1105,11 +1104,14 @@ void mostrarRanking(char nombreArchivo[]) {
     if (fp == NULL) {
         printf("Aun no hay jugadores registrados para mostrar un ranking.\n");
     } else {
-        while(fread(&jugador, sizeof(stJugador), 1, fp) > 0){
+        while(fread(&jugador, sizeof(stJugador), 1, fp) > 0 && validos < 100){
             if(jugador.eliminado == 0){
                 jugadores[validos] = jugador;
                 validos++;
             }
+        }
+        if (fread(&jugador, sizeof(stJugador), 1, fp) > 0) {
+            printf("Nota: Solo se muestran los primeros 100 jugadores debido a limitaciones de memoria.\n");
         }
         fclose(fp);
 
@@ -1146,18 +1148,22 @@ void ordenarRanking(stJugador jugadores[], int validos) {
 
 void guardarPartida(stPartida partida, char nombreArchivo[]) {
     FILE* fp = fopen(nombreArchivo, "ab");
-    if (fp != NULL) {
-        fwrite(&partida, sizeof(stPartida), 1, fp);
-        fclose(fp);
+    if (fp == NULL) {
+        printf("Error crítico: No se pudo abrir el archivo %s para guardar la partida.\n", nombreArchivo);
+        return;
     }
+    fwrite(&partida, sizeof(stPartida), 1, fp);
+    fclose(fp);
 }
 
 void guardarPartidaXJugador(stPartidaXJugador pxj, char nombreArchivo[]) {
     FILE* fp = fopen(nombreArchivo, "ab");
-    if (fp != NULL) {
-        fwrite(&pxj, sizeof(stPartidaXJugador), 1, fp);
-        fclose(fp);
+    if (fp == NULL) {
+        printf("Error crítico: No se pudo abrir el archivo %s para guardar la partida por jugador.\n", nombreArchivo);
+        return;
     }
+    fwrite(&pxj, sizeof(stPartidaXJugador), 1, fp);
+    fclose(fp);
 }
 
 int obtenerUltimoIdPartida(char nombreArchivo[]) {
