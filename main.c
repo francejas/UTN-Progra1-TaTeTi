@@ -51,21 +51,21 @@ typedef struct {
 void inicializarTablero(char tablero[FILAS][COLUMNAS]);
 int mostrarMenuJuego();
 void seleccionPiezas(char *p1, char *p2);
-void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugador1, stJugador jugador2);
+void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador* jugador1, stJugador* jugador2);
 void mostrarTablero(char tablero[FILAS][COLUMNAS]);
 int movimientoInvalido(char tablero[FILAS][COLUMNAS], int fila, int columna);
 int hayGanador(char tablero[FILAS][COLUMNAS], char jugador);
 int empate(char tablero[FILAS][COLUMNAS]);
 int modoDificultad();
-void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado);
-void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado);
-void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado);
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador* jugadorLogueado);
+void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador* jugadorLogueado);
+void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador* jugadorLogueado);
 void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char actual);
 int minimax(char tablero[FILAS][COLUMNAS], int profundidad, int esMaximizador, char jugador, char maquina);
 int evaluarEstado(char tablero[FILAS][COLUMNAS], char jugador, char maquina);
-int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador jugador1, stJugador jugador2, int esContraCpu, int dificultad, char p1, char p2);
+int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador* jugador1, stJugador* jugador2, int esContraCpu, int dificultad, char p1, char p2);
 int verificarResultadoJuego(char tablero[FILAS][COLUMNAS], char actual);
-void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resultado, char actual, char p1, char p2, int esContraCpu, int dificultad);
+void guardarResultadoPartida(stJugador* jugador1, stJugador* jugador2, int resultado, char actual, char p1, char p2, int esContraCpu, int dificultad);
 
 int mostrarMenuPrincipal(stJugador jugadorLogueado);
 stJugador iniciarSesion(char nombreArchivo[]);
@@ -128,19 +128,17 @@ int main() {
                             }
                         }
                     }
-                    jugarPvP(tablero, p1, p2, jugadorLogueado, jugador2);
+                    jugarPvP(tablero, p1, p2, &jugadorLogueado, &jugador2);
                 } else {
                     p1 = 'X';
                     p2 = 'O';
                     int dificultad = modoDificultad();
-                    stJugador jugador2;
-                    jugador2.idJugador = -1;
                     if (dificultad == 1) {
-                        modoFacil(tablero, p1, p2, jugadorLogueado);
+                        modoFacil(tablero, p1, p2, &jugadorLogueado);
                     } else if (dificultad == 2) {
-                        modoMedio(tablero, p1, p2, jugadorLogueado);
+                        modoMedio(tablero, p1, p2, &jugadorLogueado);
                     } else {
-                        modoDificil(tablero, p1, p2, jugadorLogueado);
+                        modoDificil(tablero, p1, p2, &jugadorLogueado);
                     }
                 }
                 break;
@@ -244,7 +242,7 @@ int mostrarMenuPrincipal(stJugador jugadorLogueado) {
     return resultado;
 }
 
-void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador jugador1, stJugador jugador2) {
+void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador* jugador1, stJugador* jugador2) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -270,7 +268,7 @@ int verificarResultadoJuego(char tablero[FILAS][COLUMNAS], char actual) {
     }
 }
 
-int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador jugador1, stJugador jugador2, int esContraCpu, int dificultad, char p1, char p2) {
+int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoTerminado, int *turno, stJugador* jugador1, stJugador* jugador2, int esContraCpu, int dificultad, char p1, char p2) {
     int resultado = verificarResultadoJuego(tablero, actual);
     int victoria = (resultado == RESULTADO_VICTORIA);
     int empateJuego = (resultado == RESULTADO_EMPATE);
@@ -297,13 +295,13 @@ int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoT
         *juegoTerminado = 1;
 
         if (esContraCpu) {
-            if (jugador1.idJugador != -1) {
+            if (jugador1->idJugador != -1) {
                 guardarResultadoPartida(jugador1, jugador2, resultado, actual, p1, p2, esContraCpu, dificultad);
             }
         } else {
-            if (jugador1.idJugador != -1 && jugador2.idJugador != -1) {
+            if (jugador1->idJugador != -1 && jugador2->idJugador != -1) {
                 guardarResultadoPartida(jugador1, jugador2, resultado, actual, p1, p2, esContraCpu, dificultad);
-            } else if (jugador1.idJugador != -1) {
+            } else if (jugador1->idJugador != -1) {
                 guardarResultadoPartida(jugador1, jugador2, resultado, actual, p1, p2, esContraCpu, dificultad);
             }
         }
@@ -314,7 +312,7 @@ int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoT
     }
 }
 
-void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resultado, char actual, char p1, char p2, int esContraCpu, int dificultad) {
+void guardarResultadoPartida(stJugador* jugador1, stJugador* jugador2, int resultado, char actual, char p1, char p2, int esContraCpu, int dificultad) {
     stPartida partida;
     partida.idPartida = obtenerUltimoIdPartida(AR_PARTIDAS) + 1;
     partida.dificultad = esContraCpu ? dificultad : 0;
@@ -322,11 +320,11 @@ void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resulta
     guardarPartida(partida, AR_PARTIDAS);
 
     if (esContraCpu) {
-        if (jugador1.idJugador != -1) {
+        if (jugador1->idJugador != -1) {
             stPartidaXJugador pxj;
             pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
             pxj.idPartida = partida.idPartida;
-            pxj.idJugador = jugador1.idJugador;
+            pxj.idJugador = jugador1->idJugador;
             if (resultado == RESULTADO_VICTORIA && actual == p1) {
                 pxj.resultado = RESULTADO_VICTORIA;
                 pxj.puntosJugador = PUNTOS_VICTORIA;
@@ -338,15 +336,15 @@ void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resulta
                 pxj.puntosJugador = PUNTOS_DERROTA;
             }
             guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
-            jugador1.ptsTotales += pxj.puntosJugador;
-            actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+            jugador1->ptsTotales += pxj.puntosJugador;
+            actualizarJugadorEnArchivo(*jugador1, AR_JUGADORES);
         }
     } else {
-        if (jugador1.idJugador != -1 && jugador2.idJugador != -1) {
+        if (jugador1->idJugador != -1 && jugador2->idJugador != -1) {
             stPartidaXJugador pxj1;
             pxj1.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
             pxj1.idPartida = partida.idPartida;
-            pxj1.idJugador = jugador1.idJugador;
+            pxj1.idJugador = jugador1->idJugador;
             if (resultado == RESULTADO_VICTORIA && actual == p1) {
                 pxj1.resultado = RESULTADO_VICTORIA;
                 pxj1.puntosJugador = PUNTOS_VICTORIA;
@@ -362,7 +360,7 @@ void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resulta
             stPartidaXJugador pxj2;
             pxj2.idPartidaJugador = pxj1.idPartidaJugador + 1;
             pxj2.idPartida = partida.idPartida;
-            pxj2.idJugador = jugador2.idJugador;
+            pxj2.idJugador = jugador2->idJugador;
             if (resultado == RESULTADO_VICTORIA && actual == p2) {
                 pxj2.resultado = RESULTADO_VICTORIA;
                 pxj2.puntosJugador = PUNTOS_VICTORIA;
@@ -375,15 +373,15 @@ void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resulta
             }
             guardarPartidaXJugador(pxj2, AR_PARTIDAXJUGADOR);
 
-            jugador1.ptsTotales += pxj1.puntosJugador;
-            jugador2.ptsTotales += pxj2.puntosJugador;
-            actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
-            actualizarJugadorEnArchivo(jugador2, AR_JUGADORES);
-        } else if (jugador1.idJugador != -1) {
+            jugador1->ptsTotales += pxj1.puntosJugador;
+            jugador2->ptsTotales += pxj2.puntosJugador;
+            actualizarJugadorEnArchivo(*jugador1, AR_JUGADORES);
+            actualizarJugadorEnArchivo(*jugador2, AR_JUGADORES);
+        } else if (jugador1->idJugador != -1) {
             stPartidaXJugador pxj;
             pxj.idPartidaJugador = obtenerUltimoIdPartidaXJugador(AR_PARTIDAXJUGADOR) + 1;
             pxj.idPartida = partida.idPartida;
-            pxj.idJugador = jugador1.idJugador;
+            pxj.idJugador = jugador1->idJugador;
             if (resultado == RESULTADO_VICTORIA && actual == p1) {
                 pxj.resultado = RESULTADO_VICTORIA;
                 pxj.puntosJugador = PUNTOS_VICTORIA;
@@ -395,13 +393,13 @@ void guardarResultadoPartida(stJugador jugador1, stJugador jugador2, int resulta
                 pxj.puntosJugador = PUNTOS_DERROTA;
             }
             guardarPartidaXJugador(pxj, AR_PARTIDAXJUGADOR);
-            jugador1.ptsTotales += pxj.puntosJugador;
-            actualizarJugadorEnArchivo(jugador1, AR_JUGADORES);
+            jugador1->ptsTotales += pxj.puntosJugador;
+            actualizarJugadorEnArchivo(*jugador1, AR_JUGADORES);
         }
     }
 }
 
-void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
+void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador* jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -424,11 +422,11 @@ void modoFacil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJuga
         }
 
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, jugador2, 1, 1, jugador, maquina);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, &jugador2, 1, 1, jugador, maquina);
     }
 }
 
-void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
+void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador* jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -472,11 +470,11 @@ void modoMedio(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJuga
         }
 
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, jugador2, 1, 2, jugador, maquina);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, &jugador2, 1, 2, jugador, maquina);
     }
 }
 
-void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador jugadorLogueado) {
+void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJugador* jugadorLogueado) {
     int turno = 0;
     int fila = 0;
     int columna = 0;
@@ -513,7 +511,7 @@ void modoDificil(char tablero[FILAS][COLUMNAS], char jugador, char maquina, stJu
         }
 
         tablero[fila][columna] = actual;
-        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, jugador2, 1, 3, jugador, maquina);
+        verificarEstadoJuego(tablero, actual, &juegoTerminado, &turno, jugadorLogueado, &jugador2, 1, 3, jugador, maquina);
     }
 }
 
@@ -777,11 +775,12 @@ void menuVerPerfil(stJugador* jugadorLogueado) {
         }
     }
 }
+
 void modificarPerfil(stJugador* jugador, char nombreArchivo[]) {
     int opcion = 0;
     char nuevaPass[20];
     int actualizado = 0;
-    stJugador copiaJugador = *jugador; // Copia todos los datos actuales, incluyendo puntos
+    stJugador copiaJugador = *jugador;
 
     system("cls");
     printf("--- MODIFICAR DATOS ---\n");
@@ -841,11 +840,6 @@ void modificarPerfil(stJugador* jugador, char nombreArchivo[]) {
             return;
     }
 
-    // IMPORTANTE: Asegurarse de que los puntos y el estado se mantengan
-    copiaJugador.ptsTotales = jugador->ptsTotales;
-    copiaJugador.eliminado = jugador->eliminado;
-    copiaJugador.idJugador = jugador->idJugador;
-
     actualizado = actualizarJugadorEnArchivo(copiaJugador, nombreArchivo);
 
     if(actualizado) {
@@ -862,28 +856,17 @@ int actualizarJugadorEnArchivo(stJugador jugador, char nombreArchivo[]) {
 
     if (fp == NULL) {
         printf("Error al abrir el archivo de jugadores.\n");
-        return 0;
-    }
-
-    stJugador temp;
-    long posicion = 0;
-
-    // Buscar el jugador por ID y guardar su posición
-    while(fread(&temp, sizeof(stJugador), 1, fp) > 0) {
-        if(temp.idJugador == jugador.idJugador) {
-            // Volver a la posición del registro encontrado
-            fseek(fp, posicion, SEEK_SET);
-
-            // Escribir el jugador actualizado
-            if(fwrite(&jugador, sizeof(stJugador), 1, fp) == 1) {
+    } else {
+        stJugador temp;
+        while(fread(&temp, sizeof(stJugador), 1, fp) > 0 && !actualizado) {
+            if(temp.idJugador == jugador.idJugador) {
+                fseek(fp, -sizeof(stJugador), SEEK_CUR);
+                fwrite(&jugador, sizeof(stJugador), 1, fp);
                 actualizado = 1;
             }
-            break;
         }
-        posicion = ftell(fp); // Guardar la posición actual
+        fclose(fp);
     }
-
-    fclose(fp);
     return actualizado;
 }
 
