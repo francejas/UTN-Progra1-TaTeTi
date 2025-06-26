@@ -244,9 +244,10 @@ int mostrarMenuPrincipal(stJugador jugadorLogueado) {
 
 void jugarPvP(char tablero[FILAS][COLUMNAS], char p1, char p2, stJugador* jugador1, stJugador* jugador2) {
     int turno = 0;
+    char actual;
     int fila = 0;
     int columna = 0;
-    char actual;
+
     int juegoTerminado = 0;
 
     while (!juegoTerminado) {
