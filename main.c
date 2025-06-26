@@ -112,17 +112,17 @@ int main() {
                     jugador2.idJugador = -1;
                     if (jugadorLogueado.idJugador != -1) {
                         char respuesta;
-                        printf("¿El jugador 2 desea iniciar sesión? (s/n): ");
+                        printf("¿El jugador 2 desea iniciar sesion? (s/n): ");
                         scanf(" %c", &respuesta);
                         if (respuesta == 's' || respuesta == 'S') {
                             jugador2 = iniciarSesion(AR_JUGADORES);
                             if (jugador2.idJugador == -1) {
-                                printf("No se encontró el email o la contraseña es incorrecta.\n");
+                                printf("No se encontro el email o la contraseña es incorrecta.\n");
                                 printf("¿Desea registrarse? (s/n): ");
                                 scanf(" %c", &respuesta);
                                 if (respuesta == 's' || respuesta == 'S') {
                                     registrarJugador(AR_JUGADORES);
-                                    printf("Registro exitoso. Ahora inicie sesión.\n");
+                                    printf("Registro exitoso. Ahora inicie sesion.\n");
                                     jugador2 = iniciarSesion(AR_JUGADORES);
                                 }
                             }
@@ -147,7 +147,7 @@ int main() {
                 if (jugadorLogueado.idJugador == -1) {
                     jugadorLogueado = iniciarSesion(AR_JUGADORES);
                     if (jugadorLogueado.idJugador != -1) {
-                        printf("Inicio de sesión exitoso!\n");
+                        printf("Inicio de sesion exitoso!\n");
                     } else {
                         printf("Email o contraseña incorrectos.\n");
                     }
@@ -184,7 +184,7 @@ int main() {
                 break;
         }
         if (!salir) {
-            printf("\nPresione ENTER para volver al menú principal...");
+            printf("\nPresione ENTER para volver al menu principal...");
             getchar(); getchar();
             system("cls");
         }
@@ -209,32 +209,32 @@ int mostrarMenuPrincipal(stJugador jugadorLogueado) {
         }
 
         if (jugadorLogueado.idJugador == -1) {
-            printf("1 - Partida rápida\n");
+            printf("1 - Partida rapida\n");
         } else {
             printf("1 - Iniciar partida\n");
         }
 
         if (jugadorLogueado.idJugador == -1) {
-            printf("2 - Iniciar sesión\n");
+            printf("2 - Iniciar sesion\n");
             printf("3 - Registrarse\n");
             printf("4 - Salir\n");
         } else {
             printf("2 - Ver/Modificar mi perfil\n");
-            printf("3 - Ver mis estadísticas\n");
+            printf("3 - Ver mis estadisticas\n");
             printf("4 - Ranking de jugadores\n");
-            printf("5 - Cerrar sesión\n");
+            printf("5 - Cerrar sesion\n");
             printf("6 - Salir del juego\n");
         }
 
-        printf("Seleccione una opción: ");
+        printf("Seleccione una opcion: ");
         if (scanf("%d", &opcion) != 1) {
             while (getchar() != '\n'); // Limpia el búfer
-            printf("Entrada inválida. Por favor, ingrese un número.\n");
+            printf("Entrada invalida. Por favor, ingrese un numero.\n");
         } else if (opcion >= 1 && opcion <= maxOpcion) {
             flag = 0;
             resultado = opcion;
         } else {
-            printf("Opción inválida. Intente de nuevo.\n");
+            printf("Opcion invalida. Intente de nuevo.\n");
         }
         system("pause");
         system("cls");
@@ -281,7 +281,7 @@ int verificarEstadoJuego(char tablero[FILAS][COLUMNAS], char actual, int *juegoT
                 if (actual == p1) {
                     printf("Jugador (%c) gana!\n", actual);
                 } else {
-                    printf("Máquina (%c) gana!\n", actual);
+                    printf("Maquina (%c) gana!\n", actual);
                 }
             } else {
                 if (actual == p1) {
@@ -525,14 +525,14 @@ int mostrarMenuJuego() {
         printf("=== TA-TE-TI ===\n");
         printf("=== MODO DE JUEGO ===\n");
         printf("1 - Jugador vs Jugador\n");
-        printf("2 - Jugador vs Máquina\n");
-        printf("Seleccione una opción: ");
+        printf("2 - Jugador vs Maquina\n");
+        printf("Seleccione una opcion: ");
         scanf("%d", &opcion);
         if (opcion == 1 || opcion == 2) {
             flag = 0;
             resultado = opcion;
         } else {
-            printf("Opción inválida. Intente de nuevo.\n");
+            printf("Opcion invalida. Intente de nuevo.\n");
         }
     }
 
@@ -555,16 +555,16 @@ int modoDificultad() {
 
     while (flag) {
         printf("Seleccione dificultad:\n");
-        printf("1 - Fácil\n");
+        printf("1 - Facil\n");
         printf("2 - Medio\n");
-        printf("3 - Difícil\n");
-        printf("Elección: ");
+        printf("3 - Dificil\n");
+        printf("Eleccion: ");
         scanf("%d", &dificultad);
         if (dificultad >= 1 && dificultad <= 3) {
             flag = 0;
             resultado = dificultad;
         } else {
-            printf("Opción inválida. Intente de nuevo.\n");
+            printf("Opcion invalida. Intente de nuevo.\n");
         }
     }
 
@@ -583,7 +583,7 @@ void seleccionPiezas(char *p1, char *p2) {
         if (*p1 == 'X' || *p1 == 'O') {
             flag = 0;
         } else {
-            printf("Ficha inválida. Intente de nuevo.\n");
+            printf("Ficha invalida. Intente de nuevo.\n");
         }
     }
 
@@ -627,7 +627,7 @@ void turnoJugador(char tablero[FILAS][COLUMNAS], int *fila, int *columna, char a
             *columna = columnaTemp;
             flag = 0;
         } else {
-            printf("Movimiento inválido. Intente de nuevo.\n");
+            printf("Movimiento invalido. Intente de nuevo.\n");
         }
     }
 }
@@ -1171,7 +1171,7 @@ void ordenarRanking(stJugador jugadores[], int validos) {
 void guardarPartida(stPartida partida, char nombreArchivo[]) {
     FILE* fp = fopen(nombreArchivo, "ab");
     if (fp == NULL) {
-        printf("Error crítico: No se pudo abrir el archivo %s para guardar la partida.\n", nombreArchivo);
+        printf("Error critico: No se pudo abrir el archivo %s para guardar la partida.\n", nombreArchivo);
         return;
     }
     fwrite(&partida, sizeof(stPartida), 1, fp);
@@ -1181,7 +1181,7 @@ void guardarPartida(stPartida partida, char nombreArchivo[]) {
 void guardarPartidaXJugador(stPartidaXJugador pxj, char nombreArchivo[]) {
     FILE* fp = fopen(nombreArchivo, "ab");
     if (fp == NULL) {
-        printf("Error crítico: No se pudo abrir el archivo %s para guardar la partida por jugador.\n", nombreArchivo);
+        printf("Error critico: No se pudo abrir el archivo %s para guardar la partida por jugador.\n", nombreArchivo);
         return;
     }
     fwrite(&pxj, sizeof(stPartidaXJugador), 1, fp);
